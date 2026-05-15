@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toronto Bookclub: Library Stats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f3f0;             /* warm off-white paper */
+    --bg-card: #fbfaf7;        /* slightly lighter for cards */
+    --ink: #1c1c1c;            /* charcoal text */
+    --ink-soft: #3a3a3a;
+    --ink-mute: #6c6c6c;
+    --rule: #d6d4cf;
+    --rule-soft: #e5e3de;
+    --accent: #1c1c1c;
+    --rust: #b85432;           /* primary accent rust */
+    --rust-soft: #d9a98a;      /* softer rust */
+    --hover: #ecebe6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Work Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 16px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* MASTHEAD */
+  .masthead {
+    padding: 24px 32px 18px;
+    text-align: center;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .navline {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 14px;
+  }
+
+  h1.title {
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  h1.title em {
+    color: var(--rust);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .lede {
+    max-width: 640px;
+    margin: 0 auto 16px;
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+
+  /* STATS STRIP */
+  .stats-strip {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 12px 0 0;
+  }
+
+  .stat {
+    padding: 4px 28px;
+    text-align: center;
+    min-width: 110px;
+    position: relative;
+  }
+  .stat + .stat::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 1px;
+    background: var(--rule);
+  }
+
+  .stat-num {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .stat-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-mute);
+  }
+
+  /* TABS */
+  .tab-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--ink);
+    margin-top: 18px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+  }
+
+  .tab-bar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    padding: 0 32px;
+    gap: 4px;
+  }
+
+  .tab {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    font-family: 'Libre Caslon Text', Georgia, serif;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    padding: 22px 36px 20px;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .tab:hover {
+    color: #ffffff;
+    background: rgba(255,255,255,0.05);
+  }
+  .tab.active {
+    color: #ffffff;
+    background: rgba(255,255,255,0.10);
+  }
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--rust);
+  }
+  .tab-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    transition: opacity 0.2s, background 0.2s;
+  }
+  .tab.active .tab-dot { background: var(--rust); opacity: 1; }
+  .tab:hover .tab-dot { opacity: 0.8; }
+
+  /* MAIN */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION HEADERS */
+  .section {
+    margin-bottom: 64px;
+  }
+  .section-head {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .section-head h2 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .section-head .meta {
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink-mute);
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+  .section-head .rule {
+    width: 100%;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* TIMELINE */
+  .timeline {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 170px;
+    padding: 16px 0 44px;
+    overflow-x: auto;
+    position: relative;
+  }
+  .tl-year {
+    flex: 1;
+    min-width: 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .tl-year.tl-early {
+    flex: 0 0 70px;
+  }
+  .tl-year.tl-early .tl-bar {
+    background: var(--rust);
+    opacity: 0.7;
+  }
+  .tl-year.tl-early:hover .tl-bar {
+    opacity: 1;
+  }
+  .tl-year.tl-early .tl-label {
+    transform: rotate(-45deg);
+    transform-origin: top right;
+    font-style: italic;
+    color: var(--rust);
+  }
+  .tl-sep {
+    flex: 0 0 1px;
+    align-self: stretch;
+    background: var(--rule);
+    margin: 8px 14px 30px;
+  }
+  .tl-bar {
+    width: 100%;
+    background: var(--ink);
+    transition: background 0.2s;
+    min-height: 4px;
+  }
+  .tl-year:hover .tl-bar { background: var(--rust); }
+  .tl-year.selected .tl-bar { background: var(--rust); }
+  .tl-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 10px;
+    color: var(--ink-mute);
+    margin-top: 8px;
+    transform: rotate(-45deg);
+    transform-origin: top right;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+  .tl-count {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink);
+    position: absolute;
+    top: -18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tl-year:hover .tl-count, .tl-year.selected .tl-count { opacity: 1; }
+
+  /* BARS */
+  .bars {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 150px 1fr 80px;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+  }
+  .bar-label {
+    color: var(--ink);
+    text-align: right;
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1rem;
+  }
+  .bar-track {
+    background: var(--rule-soft);
+    height: 11px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--ink);
+    transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .bar-val {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink-mute);
+  }
+
+  /* AUTHOR GRID */
+  .author-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .author-card {
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg-card);
+  }
+  .author-name {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 400;
+    color: var(--ink);
+    font-size: 1rem;
+  }
+  .author-count {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .author-card.repeat-many .author-count { color: var(--rust); }
+
+  /* DONUTS */
+  .donuts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 32px;
+  }
+  .donut-card { text-align: center; }
+  .donut-card h3 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: var(--ink);
+    font-weight: 400;
+    font-style: italic;
+  }
+  .donut-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+  }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-center .big {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .donut-center .small {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 6px;
+  }
+  .donut-legend {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    font-family: 'Work Sans', sans-serif;
+  }
+  .donut-legend-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-sw { width: 10px; height: 10px; }
+
+  /* FILTER BAR */
+  .filter-bar {
+    padding: 0 0 22px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .filter-bar input, .filter-bar select {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 13px;
+    border: 1px solid var(--rule);
+    background: var(--bg-card);
+    color: var(--ink);
+    padding: 9px 12px;
+  }
+  .filter-bar input:focus, .filter-bar select:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+
+  .results-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .clear-filters {
+    background: none;
+    border: none;
+    color: var(--ink);
+    cursor: pointer;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'Work Sans', sans-serif;
+    text-decoration: underline;
+  }
+
+  /* TABLE */
+  table.books {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+  }
+  table.books th {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    text-align: left;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--ink);
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  table.books th:hover { color: var(--ink); }
+  table.books th .sort-ind {
+    display: inline-block;
+    margin-left: 4px;
+    color: var(--ink);
+    opacity: 0;
+    font-size: 9px;
+  }
+  table.books th.sort-active .sort-ind { opacity: 1; }
+
+  table.books td {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: 0.95rem;
+    vertical-align: top;
+  }
+  table.books tr:last-child td { border-bottom: none; }
+  table.books tr:hover td { background: var(--hover); }
+
+  td.year {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 1rem;
+    width: 56px;
+  }
+  td.title {
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink);
+    font-size: 1.02rem;
+  }
+  td.author { color: var(--ink-soft); }
+  td.host {
+    font-family: 'Libre Caslon Text', serif;
+    color: var(--rust);
+    font-size: 0.95rem;
+  }
+  td.host.empty { color: var(--ink-mute); font-style: italic; font-family: 'Work Sans', sans-serif; font-size: 0.85rem; }
+  td.nat { color: var(--ink-mute); font-size: 0.9rem; }
+  td.pages { color: var(--ink-mute); font-size: 0.9rem; }
+  td.pub { color: var(--ink-mute); font-size: 0.9rem; font-family: 'Libre Caslon Text', serif; }
+
+  .pill {
+    display: inline-block;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid var(--rule);
+    color: var(--ink-mute);
+  }
+  .pill.nf { border-color: var(--rust); color: var(--rust); }
+
+  /* PAGINATION */
+  .pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 26px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 12px;
+  }
+  .pager button {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .pager button:hover:not(:disabled) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pager button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .pager .pi { color: var(--ink-mute); letter-spacing: 0.08em; }
+
+  /* HOSTS TAB */
+  .hosts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .host-card {
+    padding: 22px 20px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: left;
+  }
+  .host-card:hover { background: var(--hover); }
+  .host-card .h-name {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .host-card .h-count {
+    font-family: 'Libre Caslon Text', serif;
+    font-weight: 700;
+    font-size: 2.4rem;
+    color: var(--rust);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .host-card .h-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+  }
+  .host-card .h-recent {
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    margin-top: 12px;
+    line-height: 1.4;
+  }
+
+  /* HOST DETAIL VIEW */
+  .host-detail {
+    display: none;
+  }
+  .host-detail.active { display: block; }
+
+  .host-detail-head {
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .back-to-hosts {
+    background: none;
+    border: none;
+    color: var(--ink-mute);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-bottom: 14px;
+  }
+  .back-to-hosts:hover { color: var(--ink); }
+  .host-detail-head h2 {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 2.2rem;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .host-detail-head .summary {
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink-mute);
+    font-size: 1rem;
+  }
+
+  .host-mini-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin: 18px 0 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--rule-soft);
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .host-mini-stat {
+    text-align: left;
+  }
+  .host-mini-stat .n {
+    font-family: 'Libre Caslon Text', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .host-mini-stat .l {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+    margin-top: 5px;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 40px 32px;
+    border-top: 1px solid var(--rule);
+    font-family: 'Libre Caslon Text', serif;
+    font-style: italic;
+    color: var(--ink-mute);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    main { padding: 32px 16px 60px; }
+    .masthead { padding: 36px 16px 14px; }
+    .filter-bar { grid-template-columns: 1fr 1fr; }
+    .bar-row { grid-template-columns: 100px 1fr 60px; font-size: 0.85rem; gap: 12px; }
+    .bar-label { font-size: 0.85rem; }
+    table.books th, table.books td { padding: 10px 8px; font-size: 0.85rem; }
+    .tab { padding: 16px 20px 14px; font-size: 15px; }
+    .stats-strip { padding: 12px 0; }
+    .stat { padding: 4px 14px; min-width: 90px; }
+    .stat-num { font-size: 1.4rem; }
+    td.nat, td.pages, td.host, td.pub { display: none; }
+    table.books th.col-nat, table.books th.col-pages, table.books th.col-host, table.books th.col-pub { display: none; }
+    .section { margin-bottom: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="navline">Reading List · 1993–2026</div>
+  <h1 class="title">Toronto Bookclub: <em>Library Stats</em></h1>
+  <p class="lede">
+    333 books and counting.
+  </p>
+  <div class="stats-strip">
+    <div class="stat"><div class="stat-num">333</div><div class="stat-label">Books</div></div>
+    <div class="stat"><div class="stat-num">34</div><div class="stat-label">Years</div></div>
+    <div class="stat"><div class="stat-num">112,999</div><div class="stat-label">Pages</div></div>
+    <div class="stat"><div class="stat-num">287</div><div class="stat-label">Authors</div></div>
+    <div class="stat"><div class="stat-num">26</div><div class="stat-label">Hosts</div></div>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <div class="tab-bar-inner">
+    <button class="tab active" data-tab="charts"><span class="tab-dot"></span>Charts &amp; Stats</button>
+    <button class="tab" data-tab="browse"><span class="tab-dot"></span>Browse Books</button>
+    <button class="tab" data-tab="hosts"><span class="tab-dot"></span>Hosts</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- CHARTS PANEL -->
+  <div class="panel active" id="panel-charts">
+    <section class="section">
+      <div class="section-head">
+        <h2>Reading across the years</h2>
+        <div class="meta" id="year-meta"></div>
+        <div class="rule"></div>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Where the writers come from</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="bars" id="nat-bars"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Authors read more than once</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="author-grid" id="author-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>The shape of the shelf</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="donuts" style="grid-template-columns: repeat(2, 1fr); max-width: 560px; margin: 0 auto;">
+        <div class="donut-card">
+          <h3>Gender of author</h3>
+          <div class="donut-wrap" id="donut-gender"></div>
+          <div class="donut-legend" id="legend-gender"></div>
+        </div>
+        <div class="donut-card">
+          <h3>Originally in</h3>
+          <div class="donut-wrap" id="donut-lang"></div>
+          <div class="donut-legend" id="legend-lang"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>When the books were written</h2>
+        <div class="meta">By publication decade</div>
+        <div class="rule"></div>
+      </div>
+      <div class="bars" id="decade-bars"></div>
+    </section>
+  </div>
+
+  <!-- BROWSE PANEL -->
+  <div class="panel" id="panel-browse">
+    <section class="section">
+      <div class="section-head">
+        <h2>All 333 books</h2>
+        <div class="meta">Click a year on the timeline, a host name, or filter to narrow</div>
+        <div class="rule"></div>
+      </div>
+
+      <div class="timeline" id="timeline2"></div>
+
+      <div class="filter-bar">
+        <input type="text" id="f-search" placeholder="Search title or author…">
+        <select id="f-host"><option value="">All hosts</option></select>
+        <select id="f-gender">
+          <option value="">All authors</option>
+          <option value="M">Men</option>
+          <option value="F">Women</option>
+        </select>
+        <select id="f-lang"><option value="">All languages</option></select>
+        <select id="f-nat"><option value="">All origins</option></select>
+      </div>
+
+      <div class="results-meta">
+        <span id="result-count"></span>
+        <button class="clear-filters" id="clear">Clear filters</button>
+      </div>
+
+      <table class="books" id="books-table">
+        <thead>
+          <tr>
+            <th data-sort="year" class="sort-active">Year<span class="sort-ind">▼</span></th>
+            <th data-sort="title">Title<span class="sort-ind">▼</span></th>
+            <th data-sort="author">Author<span class="sort-ind">▼</span></th>
+            <th data-sort="host" class="col-host">Host<span class="sort-ind">▼</span></th>
+            <th data-sort="primary" class="col-nat">Origin<span class="sort-ind">▼</span></th>
+            <th data-sort="pages" class="col-pages">Pages<span class="sort-ind">▼</span></th>
+            <th data-sort="pub_year" class="col-pub">Published<span class="sort-ind">▼</span></th>
+          </tr>
+        </thead>
+        <tbody id="books-body"></tbody>
+      </table>
+
+      <div class="pager" id="pager"></div>
+    </section>
+  </div>
+
+  <!-- HOSTS PANEL -->
+  <div class="panel" id="panel-hosts">
+    <div id="hosts-list">
+      <section class="section">
+        <div class="section-head">
+          <h2>Hosts of the bookclub</h2>
+          <div class="meta">Each member has hosted these books over the years. Click a name to see their reading.</div>
+          <div class="rule"></div>
+        </div>
+        <div class="hosts-grid" id="hosts-grid"></div>
+      </section>
+    </div>
+
+    <div class="host-detail" id="host-detail">
+      <section class="section">
+        <div class="host-detail-head">
+          <button class="back-to-hosts" id="back-to-hosts">← Back to all hosts</button>
+          <h2 id="hd-name"></h2>
+          <div class="summary" id="hd-summary"></div>
+          <div class="host-mini-stats" id="hd-stats"></div>
+        </div>
+
+        <table class="books">
+          <thead>
+            <tr>
+              <th data-hd-sort="year" class="sort-active">Year<span class="sort-ind">▼</span></th>
+              <th data-hd-sort="title">Title<span class="sort-ind">▼</span></th>
+              <th data-hd-sort="author">Author<span class="sort-ind">▼</span></th>
+              <th data-hd-sort="primary" class="col-nat">Origin<span class="sort-ind">▼</span></th>
+              <th data-hd-sort="pages" class="col-pages">Pages<span class="sort-ind">▼</span></th>
+              <th data-hd-sort="pub_year" class="col-pub">Published<span class="sort-ind">▼</span></th>
+            </tr>
+          </thead>
+          <tbody id="hd-body"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  A bookclub in Toronto · since 1993
+</footer>
+
+<script>
+const BOOKS = [{"year": 2026, "title": "Martyr!", "author": "Kaveh Akbar", "host": "Daphne", "nationality": "Iranian-American", "primary": "American", "gender": "M", "pages": 331, "pub_year": 2024, "fic": "Fiction", "lang": "English", "isbn": "9780593537619"}, {"year": 2025, "title": "The Safekeep", "author": "Yael van der Wouden", "host": "Jamie", "nationality": "Dutch-Israeli", "primary": "Dutch", "gender": "F", "pages": 272, "pub_year": 2024, "fic": "Fiction", "lang": "English", "isbn": "9781668034347"}, {"year": 2025, "title": "Cold Enough for Snow", "author": "Jessica Au", "host": "Andrew", "nationality": "Australian", "primary": "Australian", "gender": "F", "pages": 96, "pub_year": 2022, "fic": "Fiction", "lang": "English", "isbn": "9781913097769"}, {"year": 2025, "title": "Theft", "author": "Abdulrazak Gurnah", "host": "Shaun", "nationality": "Tanzanian-British", "primary": "Tanzanian", "gender": "M", "pages": 296, "pub_year": 2025, "fic": "Fiction", "lang": "English", "isbn": "9780593852606"}, {"year": 2025, "title": "Discontent", "author": "Beatriz Serrano", "host": "Diana", "nationality": "Spanish", "primary": "Spanish", "gender": "F", "pages": 192, "pub_year": 2023, "fic": "Fiction", "lang": "Spanish", "isbn": "9798217006762"}, {"year": 2026, "title": "The Last Samurai", "author": "Helen DeWitt", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 544, "pub_year": 2000, "fic": "Fiction", "lang": "English", "isbn": "9780786887002"}, {"year": 2026, "title": "What We Can Know", "author": "Ian McEwan", "host": "Kim", "nationality": "British", "primary": "British", "gender": "M", "pages": 303, "pub_year": 2025, "fic": "Fiction", "lang": "English", "isbn": "9780593804728"}, {"year": 2026, "title": "Time Shelter", "author": "Georgi Gospodinov", "host": "Zora", "nationality": "Bulgarian", "primary": "Bulgarian", "gender": "M", "pages": 304, "pub_year": 2020, "fic": "Fiction", "lang": "Bulgarian", "isbn": "9781324090953"}, {"year": 2026, "title": "Departure[s]", "author": "Julian Barnes", "host": "David", "nationality": "British", "primary": "British", "gender": "M", "pages": 176, "pub_year": 2026, "fic": "Fiction", "lang": "English", "isbn": "9780593804506"}, {"year": "Early", "title": "Neuromancer", "author": "William Gibson", "host": "John", "nationality": "American-Canadian", "primary": "Canadian", "gender": "M", "pages": 271, "pub_year": 1984, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2025, "title": "The Prime of Miss Jean Brodie", "author": "Muriel Spark", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "F", "pages": 160, "pub_year": 1961, "fic": "Fiction", "lang": "English", "isbn": "9780060931735"}, {"year": "Early", "title": "The Prime of Miss Jean Brodie", "author": "Muriel Spark", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "F", "pages": 0, "pub_year": 1961, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2025, "title": "James", "author": "Percival Everett", "host": "Kim", "nationality": "American", "primary": "American", "gender": "M", "pages": 303, "pub_year": 2024, "fic": "Fiction", "lang": "English", "isbn": "9780385550369"}, {"year": 2025, "title": "The Details", "author": "Ia Genberg", "host": "Zora", "nationality": "Swedish", "primary": "Swedish", "gender": "F", "pages": 144, "pub_year": 2022, "fic": "Fiction", "lang": "Swedish", "isbn": "9780063309715"}, {"year": 2024, "title": "Held", "author": "Anne Michaels", "host": "David", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 220, "pub_year": 2023, "fic": "Fiction", "lang": "English", "isbn": "9780771005459"}, {"year": 2025, "title": "Salvage the Bones", "author": "Jesmyn Ward", "host": "Karen", "nationality": "American", "primary": "American", "gender": "F", "pages": 261, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9781608195220"}, {"year": 2024, "title": "Giovanni’s Room", "author": "James Baldwin", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 178, "pub_year": 1956, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2024, "title": "Kairos", "author": "Jenny Erpenbeck", "host": "Avi", "nationality": "German", "primary": "German", "gender": "F", "pages": 379, "pub_year": 2021, "fic": "Fiction", "lang": "German", "isbn": "9783328600855"}, {"year": 2024, "title": "The Extinction of Irena Rey", "author": "Jennifer Croft", "host": "Diana", "nationality": "American", "primary": "American", "gender": "F", "pages": 320, "pub_year": 2024, "fic": "Fiction", "lang": "English", "isbn": "9781639731701"}, {"year": 2023, "title": "Checkout 19", "author": "Claire-Louise Bennett", "host": "David", "nationality": "Irish-British", "primary": "Irish", "gender": "F", "pages": 288, "pub_year": 2021, "fic": "Fiction", "lang": "English", "isbn": "9780593420515"}, {"year": 2024, "title": "The Fraud", "author": "Zadie Smith", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "F", "pages": 464, "pub_year": 2023, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2024, "title": "The Dictionary of Lost Words", "author": "Pip Williams", "host": "Zora", "nationality": "Australian", "primary": "Australian", "gender": "F", "pages": 384, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9781925972597"}, {"year": 2024, "title": "Berta Isla", "author": "Javier Marías", "host": "Garth", "nationality": "Spanish", "primary": "Spanish", "gender": "M", "pages": 544, "pub_year": 2017, "fic": "Fiction", "lang": "Spanish", "isbn": "9788420427362"}, {"year": 2024, "title": "Old God's Time", "author": "Sebastian Barry", "host": "Kim", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 261, "pub_year": 2023, "fic": "Fiction", "lang": "English", "isbn": "9780593296103"}, {"year": 2023, "title": "Trust", "author": "Hernan Diaz", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "M", "pages": 402, "pub_year": 2022, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2023, "title": "American Rust", "author": "Philipp Meyer", "host": "Avi", "nationality": "American", "primary": "American", "gender": "M", "pages": 384, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780385527514"}, {"year": 1994, "title": "The Shipping News", "author": "Annie Proulx", "host": "", "nationality": "American", "primary": "American", "gender": "F", "pages": 337, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780743225427"}, {"year": 2023, "title": "Birnam Wood", "author": "Eleanor Catton", "host": "Jamie", "nationality": "New Zealander", "primary": "New Zealander", "gender": "F", "pages": 424, "pub_year": 2023, "fic": "Fiction", "lang": "English", "isbn": "9781776920648"}, {"year": 2023, "title": "Small Things Like These", "author": "Claire Keegan", "host": "Wendy", "nationality": "Irish", "primary": "Irish", "gender": "F", "pages": 118, "pub_year": 2021, "fic": "Fiction", "lang": "English", "isbn": "9780802158741"}, {"year": 2023, "title": "The Years", "author": "Annie Ernaux", "host": "Daphne", "nationality": "French", "primary": "French", "gender": "F", "pages": 256, "pub_year": 2008, "fic": "Fiction", "lang": "French", "isbn": ""}, {"year": 2023, "title": "Paradise", "author": "Abdulrazak Gurnah", "host": "Andrew", "nationality": "Tanzanian-British", "primary": "Tanzanian", "gender": "M", "pages": 256, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2022, "title": "A Long Petal of the Sea", "author": "Isabel Allende", "host": "Shaun", "nationality": "Chilean", "primary": "Chilean", "gender": "F", "pages": 325, "pub_year": 2019, "fic": "Fiction", "lang": "Spanish", "isbn": ""}, {"year": 2022, "title": "Trust Exercise", "author": "Susan Choi", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 257, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9781250231260"}, {"year": "Early", "title": "Ivan Turgenev's Fathers and Sons", "author": "Jane Wexford", "host": "Karen", "nationality": "American", "primary": "American", "gender": "F", "pages": 93, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780671008772"}, {"year": 2022, "title": "The Waves", "author": "Virginia Woolf", "host": "Jamie", "nationality": "British", "primary": "British", "gender": "F", "pages": 297, "pub_year": 1931, "fic": "Fiction", "lang": "English", "isbn": "9780156949606"}, {"year": 2022, "title": "The Promise", "author": "Damon Galgut", "host": "Garth", "nationality": "South African", "primary": "South African", "gender": "M", "pages": 293, "pub_year": 2021, "fic": "Fiction", "lang": "English", "isbn": "9781784744069"}, {"year": 2022, "title": "Mexican Gothic", "author": "Silvia Moreno-Garcia", "host": "Diana", "nationality": "Mexican-Canadian", "primary": "Mexican", "gender": "F", "pages": 320, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9780525620785"}, {"year": 2022, "title": "Grey Bees", "author": "Andrey Kurkov", "host": "Kim", "nationality": "Ukrainian", "primary": "Ukrainian", "gender": "M", "pages": 349, "pub_year": 2018, "fic": "Fiction", "lang": "Russian", "isbn": "9780857059345"}, {"year": 2022, "title": "The Green Road", "author": "Anne Enright", "host": "David", "nationality": "Irish", "primary": "Irish", "gender": "F", "pages": 336, "pub_year": 2015, "fic": "Fiction", "lang": "English", "isbn": "9780393352801"}, {"year": 2021, "title": "A Children's Bible", "author": "Lydia Millet", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 224, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9780393867381"}, {"year": 2021, "title": "Klara and the Sun", "author": "Kazuo Ishiguro", "host": "Diana", "nationality": "British", "primary": "British", "gender": "M", "pages": 303, "pub_year": 2021, "fic": "Fiction", "lang": "English", "isbn": "9780593318171"}, {"year": 2021, "title": "Apeirogon", "author": "Colum McCann", "host": "Shaun", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 15, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9780307878045"}, {"year": 2022, "title": "Love in a Fallen City", "author": "Eileen Chang", "host": "Avi", "nationality": "Chinese-American", "primary": "Chinese", "gender": "F", "pages": 321, "pub_year": 1943, "fic": "Fiction", "lang": "Chinese", "isbn": "9781590171783"}, {"year": 2021, "title": "The Wrong End of the Telescope", "author": "Rabih Alameddine", "host": "Daphne", "nationality": "Lebanese-American", "primary": "American", "gender": "M", "pages": 354, "pub_year": 2021, "fic": "Fiction", "lang": "English", "isbn": "9780802157805"}, {"year": 2021, "title": "Five Little Indians", "author": "Michelle Good", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 304, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9781443459198"}, {"year": 2021, "title": "A Month in the Country", "author": "J.L. Carr", "host": "Karen", "nationality": "British", "primary": "British", "gender": "M", "pages": 160, "pub_year": 1980, "fic": "Fiction", "lang": "English", "isbn": "9780940322479"}, {"year": 2021, "title": "The White Tiger", "author": "Aravind Adiga", "host": "Zora", "nationality": "Indian", "primary": "Indian", "gender": "M", "pages": 288, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9781416562597"}, {"year": 2021, "title": "Homeland Elegies", "author": "Ayad Akhtar", "host": "David", "nationality": "American", "primary": "American", "gender": "M", "pages": 368, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9780316496421"}, {"year": 2021, "title": "Piranesi", "author": "Susanna Clarke", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "F", "pages": 245, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9781635575637"}, {"year": 2020, "title": "Train Whistle Guitar", "author": "Albert Murray", "host": "Garth", "nationality": "American", "primary": "American", "gender": "M", "pages": 192, "pub_year": 1974, "fic": "Fiction", "lang": "English", "isbn": "9780375703362"}, {"year": 2020, "title": "Ralph Ellison's The Invisible Man", "author": "Harold Bloom", "host": "Andrew", "nationality": "American", "primary": "American", "gender": "M", "pages": 205, "pub_year": 1996, "fic": "Nonfiction", "lang": "English", "isbn": "9781604135848"}, {"year": 2020, "title": "Their Eyes Were Watching God", "author": "Zora Neale Hurston", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 238, "pub_year": 1937, "fic": "Fiction", "lang": "English", "isbn": "9780061120060"}, {"year": 2020, "title": "Girl, Woman, Other", "author": "Bernardine Evaristo", "host": "Karen", "nationality": "British", "primary": "British", "gender": "F", "pages": 453, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9780241364901"}, {"year": 2020, "title": "The Ashes of London", "author": "Andrew Taylor", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 496, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780008119089"}, {"year": 2020, "title": "The Glass Hotel", "author": "Emily St. John Mandel", "host": "Garth", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 307, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9780525521143"}, {"year": 2020, "title": "Agent Running in the Field", "author": "John le Carré", "host": "Daphne", "nationality": "British", "primary": "British", "gender": "M", "pages": 282, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9781984878878"}, {"year": 2020, "title": "Weather", "author": "Jenny Offill", "host": "Zora", "nationality": "American", "primary": "American", "gender": "F", "pages": 208, "pub_year": 2020, "fic": "Fiction", "lang": "English", "isbn": "9780385351102"}, {"year": 2020, "title": "My Sister, the Serial Killer", "author": "Oyinkan Braithwaite", "host": "Kim", "nationality": "Nigerian-British", "primary": "Nigerian", "gender": "F", "pages": 226, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9780385544238"}, {"year": 2020, "title": "The Topeka School", "author": "Ben Lerner", "host": "Diana", "nationality": "American", "primary": "American", "gender": "M", "pages": 282, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9780374277789"}, {"year": 2020, "title": "Drive Your Plow Over the Bones of the Dead", "author": "Olga Tokarczuk", "host": "Avi", "nationality": "Polish", "primary": "Polish", "gender": "F", "pages": 274, "pub_year": 2009, "fic": "Fiction", "lang": "Polish", "isbn": "9780525541332"}, {"year": 2019, "title": "The Innocents", "author": "Michael Crummey", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 293, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9780385545433"}, {"year": 2019, "title": "Women Talking", "author": "Miriam Toews", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 216, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9781635572582"}, {"year": 2018, "title": "The Odyssey", "author": "Homer", "host": "Avi", "nationality": "Greek", "primary": "Greek", "gender": "M", "pages": 582, "pub_year": -700, "fic": "Fiction", "lang": "Greek", "isbn": "9780393089059"}, {"year": 2012, "title": "The Tiger's Wife", "author": "Téa Obreht", "host": "David", "nationality": "American-Serbian", "primary": "American", "gender": "F", "pages": 338, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9780385343848"}, {"year": 2019, "title": "Black Leopard, Red Wolf", "author": "Marlon James", "host": "Shaun", "nationality": "Jamaican", "primary": "Jamaican", "gender": "M", "pages": 620, "pub_year": 2019, "fic": "Fiction", "lang": "English", "isbn": "9780735220171"}, {"year": 2019, "title": "The Friend", "author": "Sigrid Nunez", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "F", "pages": 212, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9780735219458"}, {"year": 2019, "title": "In Our Mad and Furious City", "author": "Guy Gunaratne", "host": "Garth", "nationality": "British", "primary": "British", "gender": "M", "pages": 292, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9781472250193"}, {"year": 2019, "title": "House of Names", "author": "Colm Tóibín", "host": "Shaun", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 272, "pub_year": 2017, "fic": "Fiction", "lang": "English", "isbn": "9780241264935"}, {"year": 2019, "title": "The Lonely Hearts Hotel", "author": "Heather O'Neill", "host": "Andrew", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 391, "pub_year": 2017, "fic": "Fiction", "lang": "English", "isbn": "9780735213739"}, {"year": 2019, "title": "Asymmetry", "author": "Lisa Halliday", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 277, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9781501166761"}, {"year": 2019, "title": "The Sympathizer", "author": "Viet Thanh Nguyen", "host": "Karen", "nationality": "American", "primary": "American", "gender": "M", "pages": 384, "pub_year": 2015, "fic": "Fiction", "lang": "English", "isbn": "9780802123459"}, {"year": 2017, "title": "Autumn", "author": "Ali Smith", "host": "Shaun", "nationality": "British", "primary": "British", "gender": "F", "pages": 264, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780241207000"}, {"year": 2018, "title": "Outline", "author": "Rachel Cusk", "host": "Diana", "nationality": "British", "primary": "British", "gender": "F", "pages": 249, "pub_year": 2014, "fic": "Fiction", "lang": "English", "isbn": "9780571233625"}, {"year": 2018, "title": "Circe", "author": "Madeline Miller", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 393, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9780316556347"}, {"year": 2018, "title": "Warlight", "author": "Michael Ondaatje", "host": "Zora", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 290, "pub_year": 2018, "fic": "Fiction", "lang": "English", "isbn": "9781787330726"}, {"year": 2017, "title": "Swing Time", "author": "Zadie Smith", "host": "Garth", "nationality": "British", "primary": "British", "gender": "F", "pages": 453, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780241144152"}, {"year": 2017, "title": "Ship of Fools", "author": "Katherine Anne Porter", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 512, "pub_year": 1962, "fic": "Fiction", "lang": "English", "isbn": "9780316713900"}, {"year": 2018, "title": "Manhattan Beach", "author": "Jennifer Egan", "host": "Zora", "nationality": "American", "primary": "American", "gender": "F", "pages": 438, "pub_year": 2017, "fic": "Fiction", "lang": "English", "isbn": "9781476716732"}, {"year": 2018, "title": "Bellevue Square", "author": "Michael Redhill", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 262, "pub_year": 2017, "fic": "Fiction", "lang": "English", "isbn": "9780385684835"}, {"year": 2018, "title": "A Handful of Dust", "author": "Evelyn Waugh", "host": "David", "nationality": "British", "primary": "British", "gender": "M", "pages": 308, "pub_year": 1934, "fic": "Fiction", "lang": "English", "isbn": "9780316926058"}, {"year": 2018, "title": "The Dispossessed: An Ambiguous Utopia", "author": "Ursula K. Le Guin", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 387, "pub_year": 1974, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2018, "title": "Hope: A Tragedy", "author": "Shalom Auslander", "host": "Rena", "nationality": "American", "primary": "American", "gender": "M", "pages": 292, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9781594488382"}, {"year": 2008, "title": "The Bad Girl", "author": "Mario Vargas Llosa", "host": "Daphne", "nationality": "Peruvian", "primary": "Peruvian", "gender": "M", "pages": 276, "pub_year": 2006, "fic": "Fiction", "lang": "Spanish", "isbn": "9780312427764"}, {"year": 2017, "title": "A Gentleman in Moscow", "author": "Amor Towles", "host": "Kim", "nationality": "American", "primary": "American", "gender": "M", "pages": 462, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2017, "title": "Lincoln in the Bardo", "author": "George Saunders", "host": "Karen", "nationality": "American", "primary": "American", "gender": "M", "pages": 368, "pub_year": 2017, "fic": "Fiction", "lang": "English", "isbn": "9780812995343"}, {"year": 2015, "title": "The Big Nowhere", "author": "James Ellroy", "host": "Garth", "nationality": "American", "primary": "American", "gender": "M", "pages": 472, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780099366614"}, {"year": 2017, "title": "The Underground Railroad", "author": "Colson Whitehead", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 306, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780385542364"}, {"year": 2017, "title": "The Association of Small Bombs", "author": "Karan Mahajan", "host": "Avi", "nationality": "Indian", "primary": "Indian", "gender": "M", "pages": 288, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780525429630"}, {"year": 2017, "title": "Do Not Say We Have Nothing", "author": "Madeleine Thien", "host": "David", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 474, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780393609882"}, {"year": 2017, "title": "The Given Day", "author": "Dennis Lehane", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "M", "pages": 704, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780688163181"}, {"year": 2008, "title": "The Yiddish Policemen's Union", "author": "Michael Chabon", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 418, "pub_year": 2007, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2011, "title": "Cutting for Stone", "author": "Abraham Verghese", "host": "Kim", "nationality": "Ethiopian-American", "primary": "American", "gender": "M", "pages": 670, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2016, "title": "Nobody's Fool", "author": "Richard Russo", "host": "Diana", "nationality": "American", "primary": "American", "gender": "M", "pages": 549, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780679753339"}, {"year": 2016, "title": "The Little Red Chairs", "author": "Edna O'Brien", "host": "Wendy", "nationality": "Irish", "primary": "Irish", "gender": "F", "pages": 299, "pub_year": 2015, "fic": "Fiction", "lang": "English", "isbn": "9780316378239"}, {"year": 2016, "title": "Barkskins", "author": "Annie Proulx", "host": "Jamie", "nationality": "American", "primary": "American", "gender": "F", "pages": 717, "pub_year": 2016, "fic": "Fiction", "lang": "English", "isbn": "9780743288781"}, {"year": 2015, "title": "Billy Lynn's Long Halftime Walk", "author": "Ben Fountain", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 307, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780060885595"}, {"year": 2016, "title": "The Discreet Hero", "author": "Mario Vargas Llosa", "host": "Zora", "nationality": "Peruvian", "primary": "Peruvian", "gender": "M", "pages": 337, "pub_year": 2013, "fic": "Fiction", "lang": "Spanish", "isbn": "9780571310739"}, {"year": 2016, "title": "Grotesque", "author": "Natsuo Kirino", "host": "Rena", "nationality": "Japanese", "primary": "Japanese", "gender": "F", "pages": 480, "pub_year": 2003, "fic": "Fiction", "lang": "Japanese", "isbn": "9781400044948"}, {"year": 2016, "title": "The Moor's Account", "author": "Laila Lalami", "host": "Karen", "nationality": "Moroccan-American", "primary": "American", "gender": "F", "pages": 321, "pub_year": 2014, "fic": "Fiction", "lang": "English", "isbn": "9780307911667"}, {"year": 2016, "title": "Fates and Furies", "author": "Lauren Groff", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 390, "pub_year": 2015, "fic": "Fiction", "lang": "English", "isbn": "9781594634475"}, {"year": 2015, "title": "Mislaid", "author": "Nell Zink", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 256, "pub_year": 2015, "fic": "Fiction", "lang": "English", "isbn": "9780062364791"}, {"year": 2016, "title": "Station Eleven", "author": "Emily St. John Mandel", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 333, "pub_year": 2014, "fic": "Fiction", "lang": "English", "isbn": "9780385353304"}, {"year": 2016, "title": "A Girl Is a Half-Formed Thing", "author": "Eimear McBride", "host": "Wendy", "nationality": "Irish", "primary": "Irish", "gender": "F", "pages": 205, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9780957185326"}, {"year": 2015, "title": "All the Light We Cannot See", "author": "Anthony Doerr", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "M", "pages": 531, "pub_year": 2014, "fic": "Fiction", "lang": "English", "isbn": "9781476746586"}, {"year": 2015, "title": "Love and Summer", "author": "William Trevor", "host": "Karen", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 224, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780670021239"}, {"year": 2015, "title": "My Brilliant Friend", "author": "Elena Ferrante", "host": "Zora", "nationality": "Italian", "primary": "Italian", "gender": "F", "pages": 331, "pub_year": 2011, "fic": "Fiction", "lang": "Italian", "isbn": ""}, {"year": 2015, "title": "Stoner", "author": "John Williams", "host": "David", "nationality": "American", "primary": "American", "gender": "M", "pages": 292, "pub_year": 1965, "fic": "Fiction", "lang": "English", "isbn": "9781590171998"}, {"year": 2015, "title": "Americanah", "author": "Chimamanda Ngozi Adichie", "host": "Jamie", "nationality": "Nigerian", "primary": "Nigerian", "gender": "F", "pages": 477, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2007, "title": "On Beauty", "author": "Zadie Smith", "host": "Jamie", "nationality": "British", "primary": "British", "gender": "F", "pages": 446, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9780141019451"}, {"year": 2014, "title": "The Narrow Road to the Deep North", "author": "Richard Flanagan", "host": "Wendy", "nationality": "Australian", "primary": "Australian", "gender": "M", "pages": 467, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2014, "title": "The Strangeness of Beauty", "author": "Lydia Minatoya", "host": "Rena", "nationality": "American", "primary": "American", "gender": "F", "pages": 383, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780393321401"}, {"year": 2014, "title": "The Goldfinch", "author": "Donna Tartt", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "F", "pages": 771, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9780316055437"}, {"year": 2014, "title": "The Orphan Master's Son", "author": "Adam Johnson", "host": "Kim", "nationality": "American", "primary": "American", "gender": "M", "pages": 443, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780812992793"}, {"year": 2014, "title": "The Moonstone", "author": "Wilkie Collins", "host": "Diana", "nationality": "British", "primary": "British", "gender": "M", "pages": 528, "pub_year": 1868, "fic": "Fiction", "lang": "English", "isbn": "9780375757853"}, {"year": 2014, "title": "The Blue Fox", "author": "Sjón", "host": "Zora", "nationality": "Icelandic", "primary": "Icelandic", "gender": "M", "pages": 128, "pub_year": 2003, "fic": "Fiction", "lang": "Icelandic", "isbn": "9781846590375"}, {"year": 2008, "title": "The Reluctant Fundamentalist", "author": "Mohsin Hamid", "host": "Karen", "nationality": "Pakistani", "primary": "Pakistani", "gender": "M", "pages": 209, "pub_year": 2007, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2014, "title": "The Tortoise and the Hare", "author": "Elizabeth Jenkins", "host": "Daphne", "nationality": "British", "primary": "British", "gender": "F", "pages": 272, "pub_year": 1954, "fic": "Fiction", "lang": "English", "isbn": "9780860682721"}, {"year": 2014, "title": "The Good Lord Bird", "author": "James McBride", "host": "Garth", "nationality": "American", "primary": "American", "gender": "M", "pages": 417, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9781594486340"}, {"year": 2014, "title": "The Luminaries", "author": "Eleanor Catton", "host": "Jamie", "nationality": "New Zealander", "primary": "New Zealander", "gender": "F", "pages": 848, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9780316074315"}, {"year": 2013, "title": "Life After Life", "author": "Kate Atkinson", "host": "Karen", "nationality": "British", "primary": "British", "gender": "F", "pages": 544, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9780316176484"}, {"year": 2006, "title": "Three Day Road", "author": "Joseph Boyden", "host": "Karen", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 398, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9780143056959"}, {"year": 2013, "title": "Telex from Cuba", "author": "Rachel Kushner", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 322, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9781416561033"}, {"year": 2013, "title": "The Ocean at the End of the Lane", "author": "Neil Gaiman", "host": "David", "nationality": "British", "primary": "British", "gender": "M", "pages": 181, "pub_year": 2013, "fic": "Fiction", "lang": "English", "isbn": "9780062255655"}, {"year": 2012, "title": "The Sense of an Ending", "author": "Julian Barnes", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 154, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9780099564973"}, {"year": 2013, "title": "Tinkers", "author": "Paul Harding", "host": "Kim", "nationality": "American", "primary": "American", "gender": "M", "pages": 192, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9781934137192"}, {"year": "Early", "title": "What's Bred in the Bone", "author": "Robertson Davies", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 436, "pub_year": 1985, "fic": "Fiction", "lang": "English", "isbn": "9780140117936"}, {"year": "Early", "title": "To Kill a Mockingbird", "author": "Harper Lee", "host": "", "nationality": "American", "primary": "American", "gender": "F", "pages": 323, "pub_year": 1960, "fic": "Fiction", "lang": "English", "isbn": "9780060935467"}, {"year": "Early", "title": "For Those Who Hunt the Wounded Down", "author": "David Adams Richards", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 240, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780771075155"}, {"year": "Early", "title": "Wedding Song", "author": "Naguib Mahfouz", "host": "", "nationality": "Egyptian", "primary": "Egyptian", "gender": "M", "pages": 174, "pub_year": 1981, "fic": "Fiction", "lang": "Arabic", "isbn": "9780385264648"}, {"year": "Early", "title": "The Remains of the Day", "author": "Kazuo Ishiguro", "host": "", "nationality": "British", "primary": "British", "gender": "M", "pages": 258, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": "Early", "title": "The Lover", "author": "Marguerite Duras", "host": "", "nationality": "French", "primary": "French", "gender": "F", "pages": 117, "pub_year": 1984, "fic": "Fiction", "lang": "French", "isbn": ""}, {"year": "Early", "title": "Song of Solomon", "author": "Toni Morrison", "host": "", "nationality": "American", "primary": "American", "gender": "F", "pages": 338, "pub_year": 1977, "fic": "Fiction", "lang": "English", "isbn": "9781400033423"}, {"year": "Early", "title": "Presumed Innocent", "author": "Scott Turow", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 496, "pub_year": 1987, "fic": "Fiction", "lang": "English", "isbn": "9780446350983"}, {"year": "Early", "title": "People You'd Trust Your Life To: Stories", "author": "Bronwen Wallace", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 193, "pub_year": 1990, "fic": "Fiction", "lang": "English", "isbn": "9780771087912"}, {"year": "Early", "title": "Orlando", "author": "Virginia Woolf", "host": "", "nationality": "British", "primary": "British", "gender": "F", "pages": 336, "pub_year": 1928, "fic": "Fiction", "lang": "English", "isbn": "9780141184272"}, {"year": "Early", "title": "Oranges Are Not the Only Fruit", "author": "Jeanette Winterson", "host": "", "nationality": "British", "primary": "British", "gender": "F", "pages": 176, "pub_year": 1985, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": "Early", "title": "Money", "author": "Martin Amis", "host": "", "nationality": "British", "primary": "British", "gender": "M", "pages": 394, "pub_year": 1984, "fic": "Fiction", "lang": "English", "isbn": "9780099461883"}, {"year": "Early", "title": "The Lyre of Orpheus", "author": "Robertson Davies", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 472, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780670824168"}, {"year": "Early", "title": "Love in the Time of Cholera", "author": "Gabriel García Márquez", "host": "", "nationality": "Colombian", "primary": "Colombian", "gender": "M", "pages": 348, "pub_year": 1985, "fic": "Fiction", "lang": "Spanish", "isbn": "9781400034680"}, {"year": "Early", "title": "Jasmine", "author": "Bharati Mukherjee", "host": "", "nationality": "American-Indian", "primary": "American", "gender": "F", "pages": 256, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780802136305"}, {"year": "Early", "title": "In the Skin of a Lion", "author": "Michael Ondaatje", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 256, "pub_year": 1987, "fic": "Fiction", "lang": "English", "isbn": "9780679772668"}, {"year": "Early", "title": "Foundation", "author": "Isaac Asimov", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 244, "pub_year": 1951, "fic": "Fiction", "lang": "English", "isbn": "9780553803716"}, {"year": "Early", "title": "Famous Last Words", "author": "Timothy Findley", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 416, "pub_year": 1981, "fic": "Fiction", "lang": "English", "isbn": "9780571209057"}, {"year": "Early", "title": "East of Eden", "author": "John Steinbeck", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 601, "pub_year": 1952, "fic": "Fiction", "lang": "English", "isbn": "9780142000656"}, {"year": "Early", "title": "Cat’s Eye", "author": "Margaret Atwood", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 462, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780385491020"}, {"year": "Early", "title": "By Grand Central Station I Sat Down and Wept", "author": "Elizabeth Smart", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 240, "pub_year": 1945, "fic": "Fiction", "lang": "English", "isbn": "9780679738046"}, {"year": "Early", "title": "Black Robe", "author": "Brian Moore", "host": "", "nationality": "Irish-Canadian", "primary": "Irish", "gender": "M", "pages": 256, "pub_year": 1985, "fic": "Fiction", "lang": "English", "isbn": "9780452278653"}, {"year": "Early", "title": "A Prayer for Owen Meany", "author": "John Irving", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 637, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780552135399"}, {"year": "Early", "title": "The Sound and the Fury", "author": "William Faulkner", "host": "Howard", "nationality": "American", "primary": "American", "gender": "M", "pages": 366, "pub_year": 1929, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": "Early", "title": "The Color Purple", "author": "Alice Walker", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 256, "pub_year": 1982, "fic": "Fiction", "lang": "English", "isbn": "9780704300002"}, {"year": "Early", "title": "Still Life with Woodpecker", "author": "Tom Robbins", "host": "Anne", "nationality": "American", "primary": "American", "gender": "M", "pages": 277, "pub_year": 1980, "fic": "Fiction", "lang": "English", "isbn": "9781842430224"}, {"year": "Early", "title": "Setting Free the Bears", "author": "John Irving", "host": "Kim", "nationality": "American", "primary": "American", "gender": "M", "pages": 304, "pub_year": 1968, "fic": "Fiction", "lang": "English", "isbn": "9780345417985"}, {"year": "Early", "title": "Native Son", "author": "Richard Wright", "host": "Howard", "nationality": "American", "primary": "American", "gender": "M", "pages": 504, "pub_year": 1940, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": "Early", "title": "Lives of the Saints", "author": "Nino Ricci", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 238, "pub_year": 1990, "fic": "Fiction", "lang": "English", "isbn": "9780920953259"}, {"year": "Early", "title": "The Left Hand of Darkness", "author": "Ursula K. Le Guin", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "F", "pages": 304, "pub_year": 1969, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": "Early", "title": "Howards End", "author": "E.M. Forster", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 246, "pub_year": 1910, "fic": "Fiction", "lang": "English", "isbn": "9780486424545"}, {"year": "Early", "title": "Children of My Heart", "author": "Gabrielle Roy", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 171, "pub_year": 1977, "fic": "Fiction", "lang": "French", "isbn": "9780771075988"}, {"year": "Early", "title": "Cakes and Ale", "author": "W. Somerset Maugham", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 308, "pub_year": 1930, "fic": "Fiction", "lang": "English", "isbn": "9780375725029"}, {"year": "Early", "title": "Bingo", "author": "Rita Mae Brown", "host": "Anne", "nationality": "American", "primary": "American", "gender": "F", "pages": 273, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780553380408"}, {"year": "Early", "title": "Ender’s Game", "author": "Orson Scott Card", "host": "Heather", "nationality": "American", "primary": "American", "gender": "M", "pages": 324, "pub_year": 1985, "fic": "Fiction", "lang": "English", "isbn": "9780812550702"}, {"year": "Early", "title": "A Brief History of Time", "author": "Stephen W. Hawking", "host": "Howard", "nationality": "British", "primary": "British", "gender": "M", "pages": 226, "pub_year": 1988, "fic": "Nonfiction", "lang": "English", "isbn": "9780553380163"}, {"year": "Early", "title": "The Radiant Way", "author": "Margaret Drabble", "host": "Greg", "nationality": "British", "primary": "British", "gender": "F", "pages": 396, "pub_year": 1987, "fic": "Fiction", "lang": "English", "isbn": "9780140101683"}, {"year": "Early", "title": "Black Dogs", "author": "Ian McEwan", "host": "David", "nationality": "British", "primary": "British", "gender": "M", "pages": 149, "pub_year": 1992, "fic": "Fiction", "lang": "English", "isbn": "9780385494328"}, {"year": "Early", "title": "Such a Long Journey", "author": "Rohinton Mistry", "host": "Kim", "nationality": "Canadian-Indian", "primary": "Canadian", "gender": "M", "pages": 408, "pub_year": 1991, "fic": "Fiction", "lang": "English", "isbn": "9780771061318"}, {"year": "Early", "title": "One Good Story, That One", "author": "Thomas King", "host": "John", "nationality": "Canadian-American", "primary": "Canadian", "gender": "M", "pages": 147, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780006485254"}, {"year": "Early", "title": "The New York Trilogy", "author": "Paul Auster", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 308, "pub_year": 1987, "fic": "Fiction", "lang": "English", "isbn": "9780143039839"}, {"year": "Early", "title": "Kitchen", "author": "Banana Yoshimoto", "host": "Greg", "nationality": "Japanese", "primary": "Japanese", "gender": "F", "pages": 160, "pub_year": 1988, "fic": "Fiction", "lang": "Japanese", "isbn": "9780802142443"}, {"year": "Early", "title": "Funny Boy", "author": "Shyam Selvadurai", "host": "", "nationality": "Sri Lankan-Canadian", "primary": "Canadian", "gender": "M", "pages": 320, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780156005005"}, {"year": 2000, "title": "Disgrace", "author": "J.M. Coetzee", "host": "", "nationality": "South African", "primary": "South African", "gender": "M", "pages": 220, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780143036371"}, {"year": "Early", "title": "What You Need", "author": "Eliza Clark", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 169, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780006394075"}, {"year": 1993, "title": "Let The Dead Bury Their Dead: Essential Southern Stories of Magic, Folklore, and Black Gay Life in America", "author": "Randall Kenan", "host": "Anne", "nationality": "American", "primary": "American", "gender": "M", "pages": 348, "pub_year": 1992, "fic": "Fiction", "lang": "English", "isbn": "9780156505154"}, {"year": 1993, "title": "Sexing the Cherry", "author": "Jeanette Winterson", "host": "Zora", "nationality": "British", "primary": "British", "gender": "F", "pages": 167, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780802135780"}, {"year": 1993, "title": "The English Patient", "author": "Michael Ondaatje", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 320, "pub_year": 1992, "fic": "Fiction", "lang": "English", "isbn": "9780771068713"}, {"year": 1993, "title": "Revenge of the Land: A Century of Greed, Tragedy, and Murder on a Saskatchewan Farm", "author": "Maggie Siggins", "host": "Diana", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 448, "pub_year": 1991, "fic": "Nonfiction", "lang": "English", "isbn": "9780771081569"}, {"year": 1993, "title": "Talking It Over", "author": "Julian Barnes", "host": "David", "nationality": "British", "primary": "British", "gender": "M", "pages": 275, "pub_year": 1991, "fic": "Fiction", "lang": "English", "isbn": "9780679736875"}, {"year": 1993, "title": "The Chrysalids", "author": "John Wyndham", "host": "Heather", "nationality": "British", "primary": "British", "gender": "M", "pages": 200, "pub_year": 1955, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 1994, "title": "Holy the Firm", "author": "Annie Dillard", "host": "Barbara", "nationality": "American", "primary": "American", "gender": "F", "pages": 76, "pub_year": 1977, "fic": "Nonfiction", "lang": "English", "isbn": "9780060915438"}, {"year": 1994, "title": "You Just Don't Understand: Women and Men in Conversation", "author": "Deborah Tannen", "host": "Howard", "nationality": "American", "primary": "American", "gender": "F", "pages": 342, "pub_year": 1990, "fic": "Nonfiction", "lang": "English", "isbn": "9780060959623"}, {"year": 1994, "title": "The Biggest Modern Woman of the World", "author": "Susan Swan", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 340, "pub_year": 1983, "fic": "Fiction", "lang": "English", "isbn": "9780863583063"}, {"year": 1994, "title": "Pride and Prejudice", "author": "Jane Austen", "host": "Diana", "nationality": "British", "primary": "British", "gender": "F", "pages": 279, "pub_year": 1813, "fic": "Fiction", "lang": "English", "isbn": "9781441341709"}, {"year": 1994, "title": "The Missing Child", "author": "Sandra Birdsell", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 0, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780099827801"}, {"year": 1995, "title": "The First Quarter of the Moon", "author": "Michel Tremblay", "host": "Greg", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 240, "pub_year": 1989, "fic": "Fiction", "lang": "French", "isbn": "9780889223523"}, {"year": 1995, "title": "Midnight twilight tourist zone", "author": "Sharon Riis", "host": "Zora", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 0, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780888946584"}, {"year": 1995, "title": "Trent's Last Case", "author": "E.C. Bentley", "host": "Heather", "nationality": "British", "primary": "British", "gender": "M", "pages": 230, "pub_year": 1913, "fic": "Fiction", "lang": "English", "isbn": "9780755103270"}, {"year": 1995, "title": "A Very Long Engagement", "author": "Sébastien Japrisot", "host": "Wendy", "nationality": "French", "primary": "French", "gender": "M", "pages": 327, "pub_year": 1991, "fic": "Fiction", "lang": "French", "isbn": "9780452272972"}, {"year": 1995, "title": "The Alienist", "author": "Caleb Carr", "host": "David", "nationality": "American", "primary": "American", "gender": "M", "pages": 498, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780812976144"}, {"year": 1995, "title": "The Danger Tree: Memory, War, And The Search For A Family's Past", "author": "David MacFarlane", "host": "Diana", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 320, "pub_year": 1991, "fic": "Nonfiction", "lang": "English", "isbn": "9780676972948"}, {"year": 1995, "title": "The Garden of Eden", "author": "Ernest Hemingway", "host": "Laima", "nationality": "American", "primary": "American", "gender": "M", "pages": 248, "pub_year": 1986, "fic": "Fiction", "lang": "English", "isbn": "9780684804521"}, {"year": 1995, "title": "The Stone Diaries", "author": "Carol Shields", "host": "", "nationality": "American-Canadian", "primary": "Canadian", "gender": "F", "pages": 361, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780140233131"}, {"year": 1995, "title": "The Temple of Dawn", "author": "Yukio Mishima", "host": "Rena", "nationality": "Japanese", "primary": "Japanese", "gender": "M", "pages": 336, "pub_year": 1970, "fic": "Fiction", "lang": "Japanese", "isbn": ""}, {"year": 1996, "title": "Snow Falling on Cedars / East of the Mountains", "author": "David Guterson", "host": "", "nationality": "American", "primary": "American", "gender": "M", "pages": 704, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9780747574552"}, {"year": 1996, "title": "The Bird Artist", "author": "Howard Norman", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "M", "pages": 289, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780312130275"}, {"year": 1996, "title": "A Suitable Boy", "author": "Vikram Seth", "host": "Andrew", "nationality": "Indian", "primary": "Indian", "gender": "M", "pages": 1474, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780060786526"}, {"year": 1996, "title": "Fall on Your Knees", "author": "Ann-Marie MacDonald", "host": "", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 672, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9780743466523"}, {"year": 1996, "title": "The Way of a Boy: A Memoir of Java", "author": "Ernest Hillen", "host": "Mary", "nationality": "Dutch-Canadian", "primary": "Canadian", "gender": "M", "pages": 200, "pub_year": 1993, "fic": "Nonfiction", "lang": "English", "isbn": "9780140179750"}, {"year": 1997, "title": "The God of Small Things", "author": "Arundhati Roy", "host": "Mary", "nationality": "Indian", "primary": "Indian", "gender": "F", "pages": 321, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780679457312"}, {"year": 1997, "title": "The Cure for Death by Lightning", "author": "Gail Anderson-Dargatz", "host": "John", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 304, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9781860493874"}, {"year": 1997, "title": "The Englishman's Boy", "author": "Guy Vanderhaeghe", "host": "David", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 352, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9780312195441"}, {"year": 1997, "title": "The House of Mirth", "author": "Edith Wharton", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 351, "pub_year": 1905, "fic": "Fiction", "lang": "English", "isbn": "9781844082933"}, {"year": 1997, "title": "High Fidelity", "author": "Nick Hornby", "host": "Diana", "nationality": "British", "primary": "British", "gender": "M", "pages": 323, "pub_year": 1995, "fic": "Fiction", "lang": "English", "isbn": "9781573225519"}, {"year": 1997, "title": "Love, Again", "author": "Doris Lessing", "host": "Greg", "nationality": "British", "primary": "British", "gender": "F", "pages": 368, "pub_year": 1995, "fic": "Fiction", "lang": "English", "isbn": "9780060927967"}, {"year": 1997, "title": "Last Orders", "author": "Graham Swift", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 296, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9780330489676"}, {"year": 1997, "title": "Regeneration", "author": "Pat Barker", "host": "Zora", "nationality": "British", "primary": "British", "gender": "F", "pages": 256, "pub_year": 1991, "fic": "Fiction", "lang": "English", "isbn": "9780140236231"}, {"year": 1997, "title": "Fugitive Pieces", "author": "Anne Michaels", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 294, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9780679776598"}, {"year": 1998, "title": "Dreams of My Russian Summers", "author": "Andreï Makine", "host": "Kim", "nationality": "French-Russian", "primary": "French", "gender": "M", "pages": 244, "pub_year": 1995, "fic": "Fiction", "lang": "French", "isbn": "9780684852683"}, {"year": 1998, "title": "All the Pretty Horses", "author": "Cormac McCarthy", "host": "Mary", "nationality": "American", "primary": "American", "gender": "M", "pages": 302, "pub_year": 1992, "fic": "Fiction", "lang": "English", "isbn": "9780679744399"}, {"year": 1998, "title": "Underworld", "author": "Don DeLillo", "host": "Heather", "nationality": "American", "primary": "American", "gender": "M", "pages": 827, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780330369954"}, {"year": 1998, "title": "Barney's Version", "author": "Mordecai Richler", "host": "Keith", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 288, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780701162726"}, {"year": 1998, "title": "The Divine Ryans", "author": "Wayne Johnston", "host": "Diana", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 215, "pub_year": 1990, "fic": "Fiction", "lang": "English", "isbn": "9780385495448"}, {"year": 1998, "title": "Paddy Clarke Ha Ha Ha", "author": "Roddy Doyle", "host": "Jamie", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 307, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9782264022448"}, {"year": 1998, "title": "Where She Has Gone", "author": "Nino Ricci", "host": "Wendy", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 325, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780312187002"}, {"year": 1998, "title": "Fathers and Sons", "author": "Ivan Turgenev", "host": "Zora", "nationality": "Russian", "primary": "Russian", "gender": "M", "pages": 244, "pub_year": 1862, "fic": "Fiction", "lang": "Russian", "isbn": ""}, {"year": 1998, "title": "A Fine Balance", "author": "Rohinton Mistry", "host": "Kim", "nationality": "Canadian-Indian", "primary": "Canadian", "gender": "M", "pages": 603, "pub_year": 1995, "fic": "Fiction", "lang": "English", "isbn": "9781400030651"}, {"year": 1999, "title": "Life & Times of Michael K", "author": "J.M. Coetzee", "host": "Avi", "nationality": "South African", "primary": "South African", "gender": "M", "pages": 192, "pub_year": 1983, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 1999, "title": "Grace Notes", "author": "Bernard MacLaverty", "host": "Wendy", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 284, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780393318418"}, {"year": 1999, "title": "The Ground Beneath Her Feet", "author": "Salman Rushdie", "host": "Daphne", "nationality": "British-Indian", "primary": "British", "gender": "M", "pages": 576, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780312254995"}, {"year": 1999, "title": "The Luck of Ginger Coffey", "author": "Brian Moore", "host": "Diana", "nationality": "Irish-Canadian", "primary": "Irish", "gender": "M", "pages": 240, "pub_year": 1960, "fic": "Fiction", "lang": "English", "isbn": "9780586087022"}, {"year": 1999, "title": "Nights Below Station Street", "author": "David Adams Richards", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 240, "pub_year": 1988, "fic": "Fiction", "lang": "English", "isbn": "9780771034848"}, {"year": 1999, "title": "Behind the Scenes at the Museum", "author": "Kate Atkinson", "host": "Hasme", "nationality": "British", "primary": "British", "gender": "F", "pages": 332, "pub_year": 1995, "fic": "Fiction", "lang": "English", "isbn": "9780312150600"}, {"year": 1999, "title": "The Love of a Good Woman", "author": "Alice Munro", "host": "Howard", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 352, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780099287865"}, {"year": 1999, "title": "The Reader", "author": "Bernhard Schlink", "host": "David", "nationality": "German", "primary": "German", "gender": "M", "pages": 216, "pub_year": 1995, "fic": "Fiction", "lang": "German", "isbn": "9780375408267"}, {"year": 1999, "title": "Corelli’s Mandolin", "author": "Louis de Bernières", "host": "Zora", "nationality": "British", "primary": "British", "gender": "M", "pages": 437, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780679763970"}, {"year": 2000, "title": "A Question of Upbringing", "author": "Anthony Powell", "host": "Avi", "nationality": "British", "primary": "British", "gender": "M", "pages": 214, "pub_year": 1951, "fic": "Fiction", "lang": "English", "isbn": "9780445200104"}, {"year": 2000, "title": "Charlotte Gray", "author": "Sebastian Faulks", "host": "Mary", "nationality": "British", "primary": "British", "gender": "M", "pages": 401, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780375704550"}, {"year": 2000, "title": "The Colony of Unrequited Dreams", "author": "Wayne Johnston", "host": "Keith", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 590, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780385495431"}, {"year": 2000, "title": "The Tooth Fairy", "author": "Graham Joyce", "host": "Hasme", "nationality": "British", "primary": "British", "gender": "M", "pages": 324, "pub_year": 1996, "fic": "Fiction", "lang": "English", "isbn": "9780312868338"}, {"year": 2000, "title": "Harry Potter and the Sorcerer's Stone", "author": "J.K. Rowling", "host": "Sarah-Jane", "nationality": "British", "primary": "British", "gender": "F", "pages": 309, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780439554930"}, {"year": 2000, "title": "The Hours", "author": "Michael Cunningham", "host": "David", "nationality": "American", "primary": "American", "gender": "M", "pages": 230, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780312305062"}, {"year": 2000, "title": "Broken Ground", "author": "Jack Hodgins", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 360, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780771041839"}, {"year": 2001, "title": "The Poisonwood Bible", "author": "Barbara Kingsolver", "host": "Mary", "nationality": "American", "primary": "American", "gender": "F", "pages": 546, "pub_year": 1998, "fic": "Fiction", "lang": "English", "isbn": "9780060786502"}, {"year": 2001, "title": "Blindness", "author": "José Saramago", "host": "Avi", "nationality": "Portuguese", "primary": "Portuguese", "gender": "M", "pages": 326, "pub_year": 1995, "fic": "Fiction", "lang": "Portuguese", "isbn": ""}, {"year": 2001, "title": "White Teeth", "author": "Zadie Smith", "host": "David", "nationality": "British", "primary": "British", "gender": "F", "pages": 448, "pub_year": 2000, "fic": "Fiction", "lang": "English", "isbn": "9780375703867"}, {"year": 2001, "title": "No Great Mischief", "author": "Alistair MacLeod", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 304, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780375726651"}, {"year": 2001, "title": "A Lesson Before Dying", "author": "Ernest J. Gaines", "host": "Howard", "nationality": "American", "primary": "American", "gender": "M", "pages": 256, "pub_year": 1993, "fic": "Fiction", "lang": "English", "isbn": "9780375702709"}, {"year": 2001, "title": "The Catastrophist", "author": "Ronan Bennett", "host": "Daphne", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 336, "pub_year": 1997, "fic": "Fiction", "lang": "English", "isbn": "9780684870366"}, {"year": 2001, "title": "Elizabeth and After", "author": "Matt Cohen", "host": "Wendy", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 384, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780676972573"}, {"year": 2002, "title": "Austerlitz", "author": "W.G. Sebald", "host": "Wendy", "nationality": "German", "primary": "German", "gender": "M", "pages": 415, "pub_year": 2001, "fic": "Fiction", "lang": "German", "isbn": "9780140297997"}, {"year": 2002, "title": "Bel Canto", "author": "Ann Patchett", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 318, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2002, "title": "The Corrections", "author": "Jonathan Franzen", "host": "Jamie", "nationality": "American", "primary": "American", "gender": "M", "pages": 653, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9781841156736"}, {"year": 2002, "title": "Atonement", "author": "Ian McEwan", "host": "Heather", "nationality": "British", "primary": "British", "gender": "M", "pages": 351, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2002, "title": "A Good House", "author": "Bonnie Burnard", "host": "Diana", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 320, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780805064957"}, {"year": 2002, "title": "The Good Soldier: A Tale of Passion", "author": "Ford Madox Ford", "host": "", "nationality": "British", "primary": "British", "gender": "M", "pages": 368, "pub_year": 1915, "fic": "Fiction", "lang": "English", "isbn": "9781551113814"}, {"year": 2002, "title": "Clara Callan", "author": "Richard B. Wright", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 432, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780060506070"}, {"year": 2002, "title": "True History of the Kelly Gang", "author": "Peter Carey", "host": "Keith", "nationality": "Australian", "primary": "Australian", "gender": "M", "pages": 369, "pub_year": 2000, "fic": "Fiction", "lang": "English", "isbn": "9780375724671"}, {"year": 2002, "title": "Girl with a Pearl Earring", "author": "Tracy Chevalier", "host": "Sarah-Jane", "nationality": "American-British", "primary": "American", "gender": "F", "pages": 233, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780452287020"}, {"year": 2002, "title": "The Quiet American", "author": "Graham Greene", "host": "Daphne", "nationality": "British", "primary": "British", "gender": "M", "pages": 180, "pub_year": 1955, "fic": "Fiction", "lang": "English", "isbn": "9780143039020"}, {"year": 2003, "title": "What the Body Remembers", "author": "Shauna Singh Baldwin", "host": "Zora", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 471, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780385496056"}, {"year": 2003, "title": "My Name Is Red", "author": "Orhan Pamuk", "host": "David", "nationality": "Turkish", "primary": "Turkish", "gender": "M", "pages": 417, "pub_year": 1998, "fic": "Fiction", "lang": "Turkish", "isbn": ""}, {"year": 2003, "title": "The Secret Agent", "author": "Joseph Conrad", "host": "Jamie", "nationality": "British-Polish", "primary": "British", "gender": "M", "pages": 304, "pub_year": 1907, "fic": "Fiction", "lang": "English", "isbn": "9780192801692"}, {"year": 2003, "title": "Empire Falls", "author": "Richard Russo", "host": "Diana", "nationality": "American", "primary": "American", "gender": "M", "pages": 483, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780375726408"}, {"year": 2013, "title": "419", "author": "Will Ferguson", "host": "Andrew", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 393, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780670064717"}, {"year": 2013, "title": "Building Stories", "author": "Chris Ware", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 260, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780375424335"}, {"year": 2013, "title": "Capital", "author": "John Lanchester", "host": "Shaun", "nationality": "British", "primary": "British", "gender": "M", "pages": 577, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780571234622"}, {"year": 2013, "title": "Sweet Tooth", "author": "Ian McEwan", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "M", "pages": 320, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2013, "title": "City of Thieves", "author": "David Benioff", "host": "Zora", "nationality": "American", "primary": "American", "gender": "M", "pages": 258, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780670018703"}, {"year": 2003, "title": "A History of the World in 10½ Chapters", "author": "Julian Barnes", "host": "Howard", "nationality": "British", "primary": "British", "gender": "M", "pages": 320, "pub_year": 1989, "fic": "Fiction", "lang": "English", "isbn": "9780679731375"}, {"year": 2003, "title": "The Riders", "author": "Tim Winton", "host": "Daphne", "nationality": "Australian", "primary": "Australian", "gender": "M", "pages": 377, "pub_year": 1994, "fic": "Fiction", "lang": "English", "isbn": "9780684822778"}, {"year": 2003, "title": "Eva Moves the Furniture", "author": "Margot Livesey", "host": "David", "nationality": "British-American", "primary": "British", "gender": "F", "pages": 240, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780312421038"}, {"year": 2003, "title": "Life of Pi", "author": "Yann Martel", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 460, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780770430078"}, {"year": 2004, "title": "House of Sand and Fog", "author": "Andre Dubus III", "host": "Debbie", "nationality": "American", "primary": "American", "gender": "M", "pages": 365, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780375708411"}, {"year": 2004, "title": "The Known World", "author": "Edward P. Jones", "host": "Avi", "nationality": "American", "primary": "American", "gender": "M", "pages": 388, "pub_year": 2003, "fic": "Fiction", "lang": "English", "isbn": "9780061159176"}, {"year": 2004, "title": "The Way the Crow Flies", "author": "Ann-Marie MacDonald", "host": "Wendy", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 832, "pub_year": 2003, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2004, "title": "Being Dead", "author": "Jim Crace", "host": "Diana", "nationality": "British", "primary": "British", "gender": "M", "pages": 196, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780312275426"}, {"year": 2004, "title": "The Piano Tuner", "author": "Daniel Mason", "host": "Karen", "nationality": "American", "primary": "American", "gender": "M", "pages": 357, "pub_year": 2002, "fic": "Fiction", "lang": "English", "isbn": "9780330492690"}, {"year": 2004, "title": "Waiting", "author": "Ha Jin", "host": "Jamie", "nationality": "Chinese-American", "primary": "Chinese", "gender": "M", "pages": 310, "pub_year": 1999, "fic": "Fiction", "lang": "English", "isbn": "9780375706417"}, {"year": 2004, "title": "A Heartbreaking Work of Staggering Genius", "author": "Dave Eggers", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "M", "pages": 496, "pub_year": 2000, "fic": "Nonfiction", "lang": "English", "isbn": "9780676973655"}, {"year": 2004, "title": "Niagara Falls All Over Again", "author": "Elizabeth McCracken", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 336, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780385336482"}, {"year": 2004, "title": "Middlesex", "author": "Jeffrey Eugenides", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "M", "pages": 529, "pub_year": 2002, "fic": "Fiction", "lang": "English", "isbn": "9780747561620"}, {"year": 2005, "title": "The Line of Beauty", "author": "Alan Hollinghurst", "host": "Daphne", "nationality": "British", "primary": "British", "gender": "M", "pages": 438, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9780739464465"}, {"year": 2005, "title": "Wide Sargasso Sea", "author": "Jean Rhys", "host": "Avi", "nationality": "British-Dominican", "primary": "British", "gender": "F", "pages": 171, "pub_year": 1966, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2005, "title": "The Master", "author": "Colm Tóibín", "host": "Jamie", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 352, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9780771085840"}, {"year": 2005, "title": "The Member of the Wedding", "author": "Carson McCullers", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 163, "pub_year": 1946, "fic": "Fiction", "lang": "English", "isbn": "9780618492398"}, {"year": 2005, "title": "The In-Between World of Vikram Lall", "author": "M.G. Vassanji", "host": "Karen", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 416, "pub_year": 2003, "fic": "Fiction", "lang": "English", "isbn": "9780385659918"}, {"year": 2005, "title": "A Complicated Kindness", "author": "Miriam Toews", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 253, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9781582433226"}, {"year": 2005, "title": "Cloud Atlas", "author": "David Mitchell", "host": "Daphne", "nationality": "British", "primary": "British", "gender": "M", "pages": 509, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9780375507250"}, {"year": 2005, "title": "The Kite Runner", "author": "Khaled Hosseini", "host": "Jamie", "nationality": "Afghan-American", "primary": "Afghan", "gender": "M", "pages": 340, "pub_year": 2003, "fic": "Fiction", "lang": "English", "isbn": "9780747566533"}, {"year": 2005, "title": "All Families Are Psychotic", "author": "Douglas Coupland", "host": "Heather", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 279, "pub_year": 2001, "fic": "Fiction", "lang": "English", "isbn": "9780679311836"}, {"year": 2006, "title": "Death in Venice", "author": "Thomas Mann", "host": "Daphne", "nationality": "German", "primary": "German", "gender": "M", "pages": 142, "pub_year": 1911, "fic": "Fiction", "lang": "German", "isbn": "9780060576172"}, {"year": 2006, "title": "Arthur & George", "author": "Julian Barnes", "host": "Jamie", "nationality": "British", "primary": "British", "gender": "M", "pages": 505, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2006, "title": "The Accidental", "author": "Ali Smith", "host": "Diana", "nationality": "British", "primary": "British", "gender": "F", "pages": 306, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9781400032181"}, {"year": 2006, "title": "The Namesake", "author": "Jhumpa Lahiri", "host": "Avi", "nationality": "American-Indian", "primary": "American", "gender": "F", "pages": 304, "pub_year": 2003, "fic": "Fiction", "lang": "English", "isbn": "9780618485222"}, {"year": 2006, "title": "A Short History of Tractors in Ukrainian", "author": "Marina Lewycka", "host": "Wendy", "nationality": "British", "primary": "British", "gender": "F", "pages": 326, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9780141020525"}, {"year": 2006, "title": "Madame Bovary", "author": "Gustave Flaubert", "host": "David", "nationality": "French", "primary": "French", "gender": "M", "pages": 335, "pub_year": 1856, "fic": "Fiction", "lang": "French", "isbn": "9780140449129"}, {"year": 2006, "title": "Gilead", "author": "Marilynne Robinson", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "F", "pages": 247, "pub_year": 2004, "fic": "Fiction", "lang": "English", "isbn": "9780312424404"}, {"year": 2006, "title": "The Double", "author": "José Saramago", "host": "Zora", "nationality": "Portuguese", "primary": "Portuguese", "gender": "M", "pages": 324, "pub_year": 2002, "fic": "Fiction", "lang": "Portuguese", "isbn": "9780156032582"}, {"year": 2007, "title": "Fingersmith", "author": "Sarah Waters", "host": "David", "nationality": "British", "primary": "British", "gender": "F", "pages": 548, "pub_year": 2002, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2007, "title": "Water for Elephants", "author": "Sara Gruen", "host": "Jennifer", "nationality": "Canadian-American", "primary": "American", "gender": "F", "pages": 368, "pub_year": 2006, "fic": "Fiction", "lang": "English", "isbn": "9781565125605"}, {"year": 2007, "title": "The Sea", "author": "John Banville", "host": "Shaun", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 195, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9781400097029"}, {"year": 2007, "title": "Suite Française", "author": "Irène Némirovsky", "host": "Karen", "nationality": "French-Ukrainian", "primary": "French", "gender": "F", "pages": 448, "pub_year": 2004, "fic": "Fiction", "lang": "French", "isbn": "9780307264756"}, {"year": 2007, "title": "Rush Home Road", "author": "Lori Lansens", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 547, "pub_year": 2002, "fic": "Fiction", "lang": "English", "isbn": "9780676974515"}, {"year": 2007, "title": "The Emperor's Children", "author": "Claire Messud", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 479, "pub_year": 2006, "fic": "Fiction", "lang": "English", "isbn": "9780307276667"}, {"year": 2007, "title": "The History of Love", "author": "Nicole Krauss", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "F", "pages": 255, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9780393328622"}, {"year": 2008, "title": "Cockroach", "author": "Rawi Hage", "host": "Jamie", "nationality": "Lebanese-Canadian", "primary": "Canadian", "gender": "M", "pages": 324, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780393337877"}, {"year": 2008, "title": "The Mill on the Floss", "author": "George Eliot", "host": "Mary", "nationality": "British", "primary": "British", "gender": "F", "pages": 579, "pub_year": 1860, "fic": "Fiction", "lang": "English", "isbn": "9780141439624"}, {"year": 2008, "title": "The Ravine", "author": "Paul Quarrington", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 304, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780307356154"}, {"year": 2008, "title": "The Gathering", "author": "Anne Enright", "host": "Shaun", "nationality": "Irish", "primary": "Irish", "gender": "F", "pages": 261, "pub_year": 2007, "fic": "Fiction", "lang": "English", "isbn": "9780802170392"}, {"year": 2008, "title": "The Brooklyn Follies", "author": "Paul Auster", "host": "Heather", "nationality": "American", "primary": "American", "gender": "M", "pages": 304, "pub_year": 2005, "fic": "Fiction", "lang": "English", "isbn": "9780571224999"}, {"year": 2008, "title": "Late Nights on Air", "author": "Elizabeth Hay", "host": "Kim", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 364, "pub_year": 2007, "fic": "Fiction", "lang": "English", "isbn": "9780771040191"}, {"year": 2009, "title": "The Women", "author": "T. Coraghessan Boyle", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "M", "pages": 451, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780670020416"}, {"year": 2009, "title": "The Siege of Krishnapur", "author": "J.G. Farrell", "host": "Avi", "nationality": "British-Irish", "primary": "British", "gender": "M", "pages": 344, "pub_year": 1973, "fic": "Fiction", "lang": "English", "isbn": "9781590170922"}, {"year": 2009, "title": "Netherland", "author": "Joseph O'Neill", "host": "Zora", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 256, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780307388773"}, {"year": 2009, "title": "The Love Song of J. Alfred Prufrock and Other Poems", "author": "T.S. Eliot", "host": "Diana", "nationality": "British-American", "primary": "American", "gender": "M", "pages": 44, "pub_year": 1915, "fic": "Fiction", "lang": "English", "isbn": "9780848809973"}, {"year": 2009, "title": "Éloge du mariage de l'engagement et autres folies", "author": "Christiane Singer", "host": "Diana", "nationality": "French", "primary": "French", "gender": "F", "pages": 88, "pub_year": 2007, "fic": "Fiction", "lang": "French", "isbn": "9781894987165"}, {"year": 2009, "title": "Home", "author": "Marilynne Robinson", "host": "Kim", "nationality": "American", "primary": "American", "gender": "F", "pages": 336, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": "9780312428549"}, {"year": 2009, "title": "The Brief Wondrous Life of Oscar Wao", "author": "Junot Díaz", "host": "Wendy", "nationality": "Dominican-American", "primary": "American", "gender": "M", "pages": 335, "pub_year": 2007, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2009, "title": "Don't Look Now", "author": "Daphne du Maurier", "host": "Karen", "nationality": "British", "primary": "British", "gender": "F", "pages": 303, "pub_year": 1971, "fic": "Fiction", "lang": "English", "isbn": "9780140035902"}, {"year": 2009, "title": "Dr. Jekyll and Mr. Hyde", "author": "Robert Louis Stevenson", "host": "Karen", "nationality": "British", "primary": "British", "gender": "M", "pages": 139, "pub_year": 1886, "fic": "Fiction", "lang": "English", "isbn": "9780451528957"}, {"year": 2009, "title": "Mister Pip", "author": "Lloyd Jones", "host": "David", "nationality": "New Zealander", "primary": "New Zealander", "gender": "M", "pages": 272, "pub_year": 2006, "fic": "Fiction", "lang": "English", "isbn": "9780676979282"}, {"year": 2009, "title": "Sea of Poppies", "author": "Amitav Ghosh", "host": "Daphne", "nationality": "Indian", "primary": "Indian", "gender": "M", "pages": 544, "pub_year": 2008, "fic": "Fiction", "lang": "English", "isbn": ""}, {"year": 2010, "title": "The Golden Mean", "author": "Annabel Lyon", "host": "Heather", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 304, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780307356208"}, {"year": 2010, "title": "A Gate at the Stairs", "author": "Lorrie Moore", "host": "Wendy", "nationality": "American", "primary": "American", "gender": "F", "pages": 322, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780375409288"}, {"year": 2010, "title": "Land of Marvels", "author": "Barry Unsworth", "host": "Avi", "nationality": "British", "primary": "British", "gender": "M", "pages": 304, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780393335521"}, {"year": 2010, "title": "Fault Lines", "author": "Nancy Huston", "host": "Karen", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 320, "pub_year": 2006, "fic": "Fiction", "lang": "English", "isbn": "9780802170514"}, {"year": 2010, "title": "I'm Not Scared", "author": "Niccolò Ammaniti", "host": "Diana", "nationality": "Italian", "primary": "Italian", "gender": "M", "pages": 224, "pub_year": 2001, "fic": "Fiction", "lang": "Italian", "isbn": "9781877008467"}, {"year": 2010, "title": "The Infinities", "author": "John Banville", "host": "Shaun", "nationality": "Irish", "primary": "Irish", "gender": "M", "pages": 273, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780307272799"}, {"year": 2010, "title": "Troubles", "author": "J.G. Farrell", "host": "Avi", "nationality": "British-Irish", "primary": "British", "gender": "M", "pages": 459, "pub_year": 1970, "fic": "Fiction", "lang": "English", "isbn": "9781590170182"}, {"year": 2010, "title": "Galore: A Novel", "author": "Michael Crummey", "host": "Mary", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 338, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9781590514344"}, {"year": 2010, "title": "Wolf Hall", "author": "Hilary Mantel", "host": "Jamie", "nationality": "British", "primary": "British", "gender": "F", "pages": 653, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9781554687732"}, {"year": 2011, "title": "Freedom", "author": "Jonathan Franzen", "host": "Jamie", "nationality": "American", "primary": "American", "gender": "M", "pages": 562, "pub_year": 2010, "fic": "Fiction", "lang": "English", "isbn": "9780374532574"}, {"year": 2011, "title": "Foreign Bodies", "author": "Cynthia Ozick", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "F", "pages": 255, "pub_year": 2010, "fic": "Fiction", "lang": "English", "isbn": "9781848877368"}, {"year": 2011, "title": "The Elegance of the Hedgehog", "author": "Muriel Barbery", "host": "David", "nationality": "French", "primary": "French", "gender": "F", "pages": 325, "pub_year": 2006, "fic": "Fiction", "lang": "French", "isbn": "9781933372600"}, {"year": 2011, "title": "How to Read the Air", "author": "Dinaw Mengestu", "host": "Wendy", "nationality": "Ethiopian-American", "primary": "American", "gender": "M", "pages": 305, "pub_year": 2010, "fic": "Fiction", "lang": "English", "isbn": "9781594487705"}, {"year": 2011, "title": "The Selected Works of T. S. Spivet", "author": "Reif Larsen", "host": "Diana", "nationality": "American", "primary": "American", "gender": "M", "pages": 374, "pub_year": 2009, "fic": "Fiction", "lang": "English", "isbn": "9780143117353"}, {"year": 2011, "title": "Kafka on the Shore", "author": "Haruki Murakami", "host": "Karen", "nationality": "Japanese", "primary": "Japanese", "gender": "M", "pages": 467, "pub_year": 2002, "fic": "Fiction", "lang": "Japanese", "isbn": ""}, {"year": 2011, "title": "A Visit from the Goon Squad", "author": "Jennifer Egan", "host": "Avi", "nationality": "American", "primary": "American", "gender": "F", "pages": 341, "pub_year": 2010, "fic": "Fiction", "lang": "English", "isbn": "9780307477477"}, {"year": 2012, "title": "The Sisters Brothers", "author": "Patrick deWitt", "host": "Zora", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 325, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9781770890329"}, {"year": 2012, "title": "Ten Thousand Saints", "author": "Eleanor Henderson", "host": "Daphne", "nationality": "American", "primary": "American", "gender": "F", "pages": 390, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9780062021212"}, {"year": 2012, "title": "The Night Circus", "author": "Erin Morgenstern", "host": "Shaun", "nationality": "American", "primary": "American", "gender": "F", "pages": 512, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9780345802620"}, {"year": 2012, "title": "Canada", "author": "Richard Ford", "host": "Avi", "nationality": "American", "primary": "American", "gender": "M", "pages": 432, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9781443411110"}, {"year": 2012, "title": "The Headmaster's Wager", "author": "Vincent Lam", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "M", "pages": 400, "pub_year": 2012, "fic": "Fiction", "lang": "English", "isbn": "9780385661454"}, {"year": 2011, "title": "Half-Blood Blues", "author": "Esi Edugyan", "host": "Jamie", "nationality": "Canadian", "primary": "Canadian", "gender": "F", "pages": 321, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9781250012708"}, {"year": 2012, "title": "The Garden of Evening Mists", "author": "Tan Twan Eng", "host": "Rena", "nationality": "Malaysian", "primary": "Malaysian", "gender": "M", "pages": 335, "pub_year": 2011, "fic": "Fiction", "lang": "English", "isbn": "9781602861800"}, {"year": 2012, "title": "Nemesis", "author": "Philip Roth", "host": "Mary", "nationality": "American", "primary": "American", "gender": "M", "pages": 280, "pub_year": 2010, "fic": "Fiction", "lang": "English", "isbn": "9780547318356"}];
+
+// -------- TABS --------
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    // Reset hosts panel to list view when re-entering
+    if (t.dataset.tab === 'hosts') {
+      document.getElementById('hosts-list').style.display = 'block';
+      document.getElementById('host-detail').classList.remove('active');
+    }
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+
+// -------- YEAR TIMELINE --------
+function buildTimeline(elId, onclick) {
+  const el = document.getElementById(elId);
+  const yearCounts = {};
+  BOOKS.forEach(b => { yearCounts[b.year] = (yearCounts[b.year]||0) + 1; });
+  const numericYears = Object.keys(yearCounts).filter(y => y !== 'Early').map(Number).sort((a,b) => a-b);
+  const maxC = Math.max(...Object.values(yearCounts));
+  el.innerHTML = '';
+  if (yearCounts['Early']) {
+    const div = document.createElement('div');
+    div.className = 'tl-year tl-early';
+    div.dataset.year = 'Early';
+    const h = Math.round((yearCounts['Early']/maxC) * 120) + 4;
+    div.innerHTML = `<div class="tl-count">${yearCounts['Early']}</div><div class="tl-bar" style="height:${h}px"></div><div class="tl-label">Early Years</div>`;
+    if (onclick) div.addEventListener('click', () => onclick('Early'));
+    el.appendChild(div);
+    const sep = document.createElement('div');
+    sep.className = 'tl-sep';
+    el.appendChild(sep);
+  }
+  numericYears.forEach(y => {
+    const div = document.createElement('div');
+    div.className = 'tl-year';
+    div.dataset.year = y;
+    const h = Math.round((yearCounts[y]/maxC) * 120) + 4;
+    div.innerHTML = `<div class="tl-count">${yearCounts[y]}</div><div class="tl-bar" style="height:${h}px"></div><div class="tl-label">${y}</div>`;
+    if (onclick) div.addEventListener('click', () => onclick(y));
+    el.appendChild(div);
+  });
+}
+buildTimeline('timeline');
+
+const numericYears = new Set(BOOKS.filter(b => b.year !== 'Early').map(b => b.year));
+const numericBookCount = BOOKS.filter(b => b.year !== 'Early').length;
+document.getElementById('year-meta').textContent =
+  `mean ${(numericBookCount / numericYears.size).toFixed(1)} books per year`;
+
+// -------- NATIONALITY BARS --------
+const natCounts = {};
+BOOKS.forEach(b => { natCounts[b.primary] = (natCounts[b.primary]||0) + 1; });
+const sortedNats = Object.entries(natCounts).sort((a,b) => b[1]-a[1]).slice(0, 16);
+const maxNat = sortedNats[0][1];
+document.getElementById('nat-bars').innerHTML = sortedNats.map(([n, c]) => {
+  const pct = ((c / BOOKS.length) * 100).toFixed(1);
+  return `<div class="bar-row">
+    <div class="bar-label">${n}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${(c/maxNat)*100}%"></div></div>
+    <div class="bar-val">${c} · ${pct}%</div>
+  </div>`;
+}).join('');
+
+// -------- AUTHOR GRID --------
+const authCounts = {};
+BOOKS.forEach(b => { authCounts[b.author] = (authCounts[b.author]||0) + 1; });
+const repeats = Object.entries(authCounts).filter(([_,c]) => c > 1).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0]));
+document.getElementById('author-grid').innerHTML = repeats.map(([n, c]) =>
+  `<div class="author-card ${c >= 3 ? 'repeat-many' : ''}"><span class="author-name">${n}</span><span class="author-count">${c}</span></div>`
+).join('');
+
+// -------- DONUTS --------
+function makeDonut(elId, legendId, slices, palette) {
+  const total = slices.reduce((s, x) => s + x.val, 0);
+  const r = 80, c = 100, sw = 28;
+  let offset = 0;
+  const segs = slices.map((s, i) => {
+    const pct = s.val / total;
+    const dash = 2 * Math.PI * r * pct;
+    const gap = 2 * Math.PI * r - dash;
+    const el = `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${palette[i]}" stroke-width="${sw}" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${c} ${c})"></circle>`;
+    offset += dash;
+    return el;
+  }).join('');
+  const big = slices[0].val;
+  const pctBig = Math.round((big/total)*100);
+  document.getElementById(elId).innerHTML =
+    `<svg width="180" height="180" viewBox="0 0 200 200">${segs}</svg>
+     <div class="donut-center"><div class="big">${pctBig}%</div><div class="small">${slices[0].label}</div></div>`;
+  document.getElementById(legendId).innerHTML = slices.map((s, i) =>
+    `<div class="donut-legend-row"><span class="legend-sw" style="background:${palette[i]}"></span>${s.label} — ${s.val}</div>`
+  ).join('');
+}
+
+const gM = BOOKS.filter(b => b.gender === 'M').length;
+const gF = BOOKS.filter(b => b.gender === 'F').length;
+makeDonut('donut-gender', 'legend-gender',
+  [{label:'Men', val:gM}, {label:'Women', val:gF}],
+  ['#1c1c1c', '#b85432']);
+
+const lEn = BOOKS.filter(b => b.lang === 'English').length;
+const lTr = BOOKS.length - lEn;
+makeDonut('donut-lang', 'legend-lang',
+  [{label:'English', val:lEn}, {label:'Translated', val:lTr}],
+  ['#1c1c1c', '#b85432']);
+
+// -------- DECADE BARS --------
+const decadeCounts = {};
+BOOKS.forEach(b => {
+  if (b.pub_year && b.pub_year > 0) {
+    const decade = Math.floor(b.pub_year / 10) * 10;
+    decadeCounts[decade] = (decadeCounts[decade] || 0) + 1;
+  }
+});
+const decades = Object.keys(decadeCounts).map(Number).sort((a, b) => a - b);
+// Fill gaps so we show a continuous timeline
+const minD = decades[0], maxD = decades[decades.length - 1];
+const fullDecades = [];
+for (let d = minD; d <= maxD; d += 10) fullDecades.push(d);
+const maxDecCount = Math.max(...Object.values(decadeCounts));
+const totalWithPubYear = Object.values(decadeCounts).reduce((s, v) => s + v, 0);
+
+document.getElementById('decade-bars').innerHTML = fullDecades.map(d => {
+  const c = decadeCounts[d] || 0;
+  const pct = totalWithPubYear ? ((c / totalWithPubYear) * 100).toFixed(1) : 0;
+  return `<div class="bar-row">
+    <div class="bar-label">${d}s</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${(c/maxDecCount)*100}%"></div></div>
+    <div class="bar-val">${c}${c > 0 ? ' · ' + pct + '%' : ''}</div>
+  </div>`;
+}).join('');
+
+// -------- BROWSE PANEL --------
+let filterState = {search:'', host:'', gender:'', lang:'', nat:'', year:null};
+let sortState = {by:'year', dir:'desc'};
+let page = 1;
+const PAGE_SIZE = 50;
+
+function buildBrowseTimeline() {
+  buildTimeline('timeline2', (y) => {
+    if (filterState.year === y) filterState.year = null;
+    else filterState.year = y;
+    page = 1;
+    renderTable();
+    document.querySelectorAll('#timeline2 .tl-year').forEach(el => {
+      const elYear = el.dataset.year === 'Early' ? 'Early' : Number(el.dataset.year);
+      el.classList.toggle('selected', filterState.year !== null && elYear === filterState.year);
+    });
+  });
+}
+buildBrowseTimeline();
+
+// Populate filter selects
+const langs = [...new Set(BOOKS.map(b => b.lang))].sort();
+document.getElementById('f-lang').innerHTML += langs.map(l => `<option value="${l}">${l}</option>`).join('');
+const nats = [...new Set(BOOKS.map(b => b.primary))].sort();
+document.getElementById('f-nat').innerHTML += nats.map(n => `<option value="${n}">${n}</option>`).join('');
+const hosts = [...new Set(BOOKS.map(b => b.host).filter(h => h))].sort();
+document.getElementById('f-host').innerHTML += hosts.map(h => `<option value="${h}">${h}</option>`).join('');
+
+document.getElementById('f-search').addEventListener('input', e => { filterState.search = e.target.value.toLowerCase(); page = 1; renderTable(); });
+document.getElementById('f-host').addEventListener('change', e => { filterState.host = e.target.value; page = 1; renderTable(); });
+document.getElementById('f-gender').addEventListener('change', e => { filterState.gender = e.target.value; page = 1; renderTable(); });
+document.getElementById('f-lang').addEventListener('change', e => { filterState.lang = e.target.value; page = 1; renderTable(); });
+document.getElementById('f-nat').addEventListener('change', e => { filterState.nat = e.target.value; page = 1; renderTable(); });
+
+document.getElementById('clear').addEventListener('click', () => {
+  filterState = {search:'', host:'', gender:'', lang:'', nat:'', year:null};
+  ['f-search','f-host','f-gender','f-lang','f-nat'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('#timeline2 .tl-year').forEach(el => el.classList.remove('selected'));
+  page = 1;
+  renderTable();
+});
+
+document.querySelectorAll('#books-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const by = th.dataset.sort;
+    if (sortState.by === by) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+    else { sortState.by = by; sortState.dir = by === 'year' || by === 'pages' ? 'desc' : 'asc'; }
+    document.querySelectorAll('#books-table th').forEach(x => x.classList.remove('sort-active'));
+    th.classList.add('sort-active');
+    th.querySelector('.sort-ind').textContent = sortState.dir === 'asc' ? '▲' : '▼';
+    renderTable();
+  });
+});
+
+function renderTable() {
+  let rows = BOOKS.slice();
+  if (filterState.year) rows = rows.filter(b => b.year === filterState.year);
+  if (filterState.host) rows = rows.filter(b => b.host === filterState.host);
+  if (filterState.search) {
+    const q = filterState.search;
+    rows = rows.filter(b => b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+  }
+  if (filterState.gender) rows = rows.filter(b => b.gender === filterState.gender);
+  if (filterState.lang) rows = rows.filter(b => b.lang === filterState.lang);
+  if (filterState.nat) rows = rows.filter(b => b.primary === filterState.nat);
+
+  rows.sort((a, b) => {
+    let av = a[sortState.by], bv = b[sortState.by];
+    // Handle Early year specially - sort it as oldest
+    if (sortState.by === 'year') {
+      av = av === 'Early' ? -Infinity : av;
+      bv = bv === 'Early' ? -Infinity : bv;
+    }
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    if (av < bv) return sortState.dir === 'asc' ? -1 : 1;
+    if (av > bv) return sortState.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  document.getElementById('result-count').textContent =
+    `${rows.length} ${rows.length === 1 ? 'book' : 'books'}`;
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if (page > totalPages) page = totalPages;
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = rows.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('books-body').innerHTML = slice.map(b => `
+    <tr>
+      <td class="year">${b.year === 'Early' ? 'Early' : b.year}</td>
+      <td class="title">${escapeHTML(b.title)}</td>
+      <td class="author">${escapeHTML(b.author)}</td>
+      <td class="host ${b.host ? '' : 'empty'}">${b.host ? escapeHTML(b.host) : '—'}</td>
+      <td class="nat">${escapeHTML(b.nationality)}</td>
+      <td class="pages">${b.pages || ''}</td>
+      <td class="pub">${b.pub_year || ''}</td>
+    </tr>
+  `).join('');
+
+  const pg = document.getElementById('pager');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  pg.innerHTML = `
+    <button id="prev" ${page === 1 ? 'disabled' : ''}>← Prev</button>
+    <span class="pi">Page ${page} of ${totalPages}</span>
+    <button id="next" ${page === totalPages ? 'disabled' : ''}>Next →</button>
+  `;
+  document.getElementById('prev').addEventListener('click', () => { page--; renderTable(); });
+  document.getElementById('next').addEventListener('click', () => { page++; renderTable(); });
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+renderTable();
+
+// -------- HOSTS TAB --------
+const hostCounts = {};
+BOOKS.forEach(b => { if (b.host) hostCounts[b.host] = (hostCounts[b.host]||0) + 1; });
+const sortedHosts = Object.entries(hostCounts).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0]));
+
+document.getElementById('hosts-grid').innerHTML = sortedHosts.map(([h, c]) => {
+  // Most recent book hosted - sort by numeric year desc, Early last
+  const theirs = BOOKS.filter(b => b.host === h).sort((a, b) => {
+    if (a.year === 'Early' && b.year === 'Early') return 0;
+    if (a.year === 'Early') return 1;
+    if (b.year === 'Early') return -1;
+    return b.year - a.year;
+  });
+  const recent = theirs[0];
+  const recentYear = recent && (recent.year === 'Early' ? 'Early' : recent.year);
+  return `<button class="host-card" data-host="${escapeHTML(h)}">
+    <div class="h-name">${escapeHTML(h)}</div>
+    <div class="h-count">${c}</div>
+    <div class="h-label">${c === 1 ? 'Book' : 'Books'} Hosted</div>
+    ${recent ? `<div class="h-recent">Most recent: ${escapeHTML(recent.title)}<br>(${recentYear})</div>` : ''}
+  </button>`;
+}).join('');
+
+document.querySelectorAll('.host-card').forEach(card => {
+  card.addEventListener('click', () => showHostDetail(card.dataset.host));
+});
+
+let hdSortState = {by:'year', dir:'desc'};
+let currentHost = null;
+
+function showHostDetail(hostName) {
+  currentHost = hostName;
+  document.getElementById('hosts-list').style.display = 'none';
+  document.getElementById('host-detail').classList.add('active');
+
+  const theirs = BOOKS.filter(b => b.host === hostName);
+  document.getElementById('hd-name').textContent = hostName;
+
+  const years = [...new Set(theirs.map(b => b.year))].filter(y => y !== 'Early').sort();
+  const hasEarly = theirs.some(b => b.year === 'Early');
+  const totalPages = theirs.reduce((s, b) => s + b.pages, 0);
+  const men = theirs.filter(b => b.gender === 'M').length;
+  const women = theirs.filter(b => b.gender === 'F').length;
+  const langs = new Set(theirs.map(b => b.lang));
+  const nats = new Set(theirs.map(b => b.primary));
+
+  let yearRange;
+  if (years.length === 0) yearRange = 'in the early years';
+  else if (hasEarly) yearRange = `from early years to ${years[years.length-1]}`;
+  else if (years.length === 1) yearRange = `in ${years[0]}`;
+  else yearRange = `from ${years[0]} to ${years[years.length-1]}`;
+
+  document.getElementById('hd-summary').textContent =
+    `Has hosted ${theirs.length} book${theirs.length === 1 ? '' : 's'} ${yearRange}.`;
+
+  document.getElementById('hd-stats').innerHTML = `
+    <div class="host-mini-stat"><div class="n">${theirs.length}</div><div class="l">Books</div></div>
+    <div class="host-mini-stat"><div class="n">${totalPages.toLocaleString()}</div><div class="l">Pages</div></div>
+    <div class="host-mini-stat"><div class="n">${women} / ${men}</div><div class="l">Women / Men</div></div>
+    <div class="host-mini-stat"><div class="n">${nats.size}</div><div class="l">Origins</div></div>
+    <div class="host-mini-stat"><div class="n">${langs.size}</div><div class="l">Languages</div></div>
+  `;
+
+  renderHostDetailTable();
+}
+
+function renderHostDetailTable() {
+  const theirs = BOOKS.filter(b => b.host === currentHost);
+  theirs.sort((a, b) => {
+    let av = a[hdSortState.by], bv = b[hdSortState.by];
+    if (hdSortState.by === 'year') {
+      av = av === 'Early' ? -Infinity : av;
+      bv = bv === 'Early' ? -Infinity : bv;
+    }
+    if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+    if (av < bv) return hdSortState.dir === 'asc' ? -1 : 1;
+    if (av > bv) return hdSortState.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  document.getElementById('hd-body').innerHTML = theirs.map(b => `
+    <tr>
+      <td class="year">${b.year === 'Early' ? 'Early' : b.year}</td>
+      <td class="title">${escapeHTML(b.title)}</td>
+      <td class="author">${escapeHTML(b.author)}</td>
+      <td class="nat">${escapeHTML(b.nationality)}</td>
+      <td class="pages">${b.pages || ''}</td>
+      <td class="pub">${b.pub_year || ''}</td>
+    </tr>
+  `).join('');
+}
+
+document.querySelectorAll('#host-detail th[data-hd-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const by = th.dataset.hdSort;
+    if (hdSortState.by === by) hdSortState.dir = hdSortState.dir === 'asc' ? 'desc' : 'asc';
+    else { hdSortState.by = by; hdSortState.dir = by === 'year' || by === 'pages' ? 'desc' : 'asc'; }
+    document.querySelectorAll('#host-detail th').forEach(x => x.classList.remove('sort-active'));
+    th.classList.add('sort-active');
+    th.querySelector('.sort-ind').textContent = hdSortState.dir === 'asc' ? '▲' : '▼';
+    renderHostDetailTable();
+  });
+});
+
+document.getElementById('back-to-hosts').addEventListener('click', () => {
+  document.getElementById('hosts-list').style.display = 'block';
+  document.getElementById('host-detail').classList.remove('active');
+});
+
+</script>
+</body>
+</html>
